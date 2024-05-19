@@ -18,6 +18,8 @@
   
   <!-- Packages -->
   <ItemGroup>
+    <PackageReference Include="GitHub.Actions.Glob" />
+    <PackageReference Include="Humanizer.Core" />
     <PackageReference Include="Octokit" />
     <PackageReference Include="HamedStack.VSTest" />
     <PackageReference Include="Serilog" />

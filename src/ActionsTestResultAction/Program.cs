@@ -8,5 +8,6 @@ var logger = new LoggerConfiguration()
     .CreateLogger();
 
 var client = Env.CreateClient(new("nike4613/actions-test-results"));
+var inputs = Inputs.Get();
 
 logger.Debug("Running for {Repository}", Env.GITHUB_REPOSITORY);
