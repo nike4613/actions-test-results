@@ -6,6 +6,12 @@
     <WarningsAsErrors>$(WarningsAsErrors);nullable</WarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+    <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
+
+    <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>8.0</AnalysisLevel>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
