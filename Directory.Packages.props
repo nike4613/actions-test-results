@@ -1,0 +1,39 @@
+<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(ContinuousIntegrationBuild)' == 'true'">true</RestoreLockedMode>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <RoslynVersion>4.9.2</RoslynVersion>
+    <MSBuildRequiredVersion>17.8.3</MSBuildRequiredVersion>
+    <CommunityToolkitVersion>8.2.2</CommunityToolkitVersion>
+  </PropertyGroup>
+
+  <!-- Automatic package references -->
+  <ItemGroup>
+    <!-- Compiler and analyzers -->
+    <PackageReference Include="Microsoft.Net.Compilers.Toolset" Version="$(RoslynVersion)" IsImplicitlyDefined="true" Pack="false"  />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.CodeStyle" Version="$(RoslynVersion)" IsImplicitlyDefined="true" Pack="false"  />
+
+    <!-- CommunityToolkit -->
+    <PackageReference Include="CommunityToolkit.Diagnostics" Version="$(CommunityToolkitVersion)" IsImplicitlyDefined="true" />
+    <PackageReference Include="CommunityToolkit.HighPerformance" Version="$(CommunityToolkitVersion)" IsImplicitlyDefined="true" />
+
+    <!-- PolySharp -->
+    <PackageReference Include="PolySharp" IsImplicitlyDefined="true" Version="1.14.1" Pack="false">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  
+  <!-- CPM packages -->
+  <ItemGroup>
+    
+  </ItemGroup>
+  
+</Project>
