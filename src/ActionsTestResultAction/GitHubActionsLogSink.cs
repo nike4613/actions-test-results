@@ -1,4 +1,5 @@
-﻿using Serilog.Core;
+﻿using Serilog;
+using Serilog.Core;
 using Serilog.Events;
 
 namespace ActionsTestResultAction
@@ -67,6 +68,38 @@ namespace ActionsTestResultAction
             {
                 Console.WriteLine("::endgroup::");
             }
+        }
+    }
+
+    internal static class LoggerExtensions
+    {
+        public struct GroupContext(ILogger logger) : IDisposable
+        {
+            private readonly ILogger logger = logger;
+
+            public void Dispose()
+            {
+                if (logger.BindProperty(GitHubActionsLogSink.EndGroupProperty, null, false, out var prop))
+                {
+                    logger.Write(
+                        new LogEvent(
+                            DateTimeOffset.Now, LogEventLevel.Information, null, MessageTemplate.Empty,
+                            [prop]));
+                }
+            }
+        }
+
+        public static GroupContext Group(this ILogger logger, string message)
+        {
+            if (logger.BindMessageTemplate(message, null, out var template, out var props)
+             && logger.BindProperty(GitHubActionsLogSink.BeginGroupProperty, null, false, out var extraProp))
+            {
+                logger.Write(
+                    new LogEvent(
+                        DateTimeOffset.Now, LogEventLevel.Information, null, template, [.. props, extraProp]));
+            }
+
+            return new(logger);
         }
     }
 }

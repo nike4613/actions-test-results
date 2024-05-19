@@ -21,7 +21,7 @@ namespace ActionsTestResultAction
         public static readonly string? GITHUB_REPOSITORY_OWNER = Environment.GetEnvironmentVariable(nameof(GITHUB_REPOSITORY_OWNER));
         public static readonly string? GITHUB_REPOSITORY_OWNER_ID = Environment.GetEnvironmentVariable(nameof(GITHUB_REPOSITORY_OWNER_ID));
 
-        public static readonly string? GITHUB_SHA = GetInput(Inputs.CommitVar) ?? Environment.GetEnvironmentVariable(nameof(GITHUB_SHA));
+        public static readonly string? GITHUB_SHA = Environment.GetEnvironmentVariable(nameof(GITHUB_SHA));
 
         public static readonly bool OnActions = Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true";
         public static readonly bool Debug = Environment.GetEnvironmentVariable("RUNNER_DEBUG") == "1";

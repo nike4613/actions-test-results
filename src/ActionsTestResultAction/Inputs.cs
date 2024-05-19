@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using Actions.Glob;
+using ActionsTestResultAction.Webhook;
 using CommunityToolkit.Diagnostics;
 using Humanizer.Localisation;
 
@@ -29,7 +30,11 @@ namespace ActionsTestResultAction
         public bool CheckRun { get; }
         public bool JobSummary { get; }
 
-        private Inputs()
+        public string CommitSha { get; }
+
+        private static readonly char[] separator = ['\r', '\n'];
+
+        private Inputs(string eventName, Event eventPayload)
         {
             CheckName = Env.GetInput(CheckNameVar) ?? "Test Results";
             CommentTitle = Env.GetInput(CommentTitleVar) ?? CheckName;
@@ -57,7 +62,7 @@ namespace ActionsTestResultAction
 
             var include = new List<string>();
             var exclude = new List<string>();
-            foreach (var line in filesInput.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            foreach (var line in filesInput.Split(separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
                 if (line is ['!', ..var rest])
                 {
@@ -75,9 +80,19 @@ namespace ActionsTestResultAction
             TimeUnit = Env.GetInput(TimeUnitVar) is { } tu ? Enum.Parse<TimeUnit>(tu, true) : TimeUnit.Second;
             CheckRun = Env.GetInput(CheckRunVar) is "true";
             JobSummary = Env.GetInput(JobSummaryVar) is "true";
+
+            var commitSha = Env.GetInput(CommitVar);
+            if (commitSha is null)
+            {
+                if (eventName is "pull_request")
+                {
+                    commitSha = eventPayload.PullRequest?.Head?.Sha;
+                }
+            }
+            CommitSha = commitSha ?? Env.GITHUB_SHA ?? "";
         }
 
-        public static Inputs Get() => new();
+        public static Inputs Get(string eventName, Event eventPayload) => new(eventName, eventPayload);
     }
 
     internal enum CommentMode
