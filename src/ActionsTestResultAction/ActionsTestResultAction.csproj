@@ -21,8 +21,6 @@
     <PackageReference Include="Octokit" />
     <PackageReference Include="HamedStack.VSTest" />
     <PackageReference Include="Serilog" />
-    <PackageReference Include="Serilog.Sinks.Console" />
-    <PackageReference Include="Serilog.Sinks.File" />
     <PackageReference Include="SerilogAnalyzer" />
   </ItemGroup>
   
