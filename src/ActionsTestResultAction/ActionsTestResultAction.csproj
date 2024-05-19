@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
+    <RuntimeIdentifiers>win-x64;linux-x64;linux-musl-x64</RuntimeIdentifiers>
     <ImplicitUsings>enable</ImplicitUsings>
     
     <PublishAot>true</PublishAot>
@@ -23,7 +24,6 @@
     <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
 
     <ContainerRepository>actions-test-results</ContainerRepository>
-    <ContainerRuntimeIdentifier>linux-musl-x64</ContainerRuntimeIdentifier>
   </PropertyGroup>
   
   <ItemGroup>

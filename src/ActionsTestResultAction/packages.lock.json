@@ -57,6 +57,38 @@
         "contentHash": "mOOmFYwad3MIOL14VCjj02LljyF1GNw1wP0YVlxtcPvqdxjGGMNdNJJxHptlry3MOd8b40Flm8RPOM8JOlN2sQ=="
       }
     },
+    "net8.0/linux-musl-x64": {
+      "Microsoft.DotNet.ILCompiler": {
+        "type": "Direct",
+        "requested": "[8.0.3, )",
+        "resolved": "8.0.3",
+        "contentHash": "LGNORlVTRa2FDy3OcP3Xu1ZSJW4tz2ATO3WrHUwHg7kxbR9HChezgJ51CwZJQt8+Yp6acp32FDC/FTPdFDOumQ==",
+        "dependencies": {
+          "runtime.linux-musl-x64.Microsoft.DotNet.ILCompiler": "8.0.3"
+        }
+      },
+      "runtime.linux-musl-x64.Microsoft.DotNet.ILCompiler": {
+        "type": "Transitive",
+        "resolved": "8.0.3",
+        "contentHash": "KCFP5V61DusqXR+lNey2/mPhwf+GWC5RzPV+N90YRKwLArAoaWVRDHCBkH9HLDhecRSN7teXRCuXbQRq+VFc2Q=="
+      }
+    },
+    "net8.0/linux-x64": {
+      "Microsoft.DotNet.ILCompiler": {
+        "type": "Direct",
+        "requested": "[8.0.3, )",
+        "resolved": "8.0.3",
+        "contentHash": "LGNORlVTRa2FDy3OcP3Xu1ZSJW4tz2ATO3WrHUwHg7kxbR9HChezgJ51CwZJQt8+Yp6acp32FDC/FTPdFDOumQ==",
+        "dependencies": {
+          "runtime.linux-x64.Microsoft.DotNet.ILCompiler": "8.0.3"
+        }
+      },
+      "runtime.linux-x64.Microsoft.DotNet.ILCompiler": {
+        "type": "Transitive",
+        "resolved": "8.0.3",
+        "contentHash": "Um4sGSNQBAwNZJJoOJkiC3H7En9qK//KFRsT65ShewvfbYLlOsOiYHlVtEKp5t7SZIOs91iSLG99rzmajxPypg=="
+      }
+    },
     "net8.0/win-x64": {
       "Microsoft.DotNet.ILCompiler": {
         "type": "Direct",
