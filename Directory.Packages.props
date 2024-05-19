@@ -33,7 +33,8 @@
   
   <!-- CPM packages -->
   <ItemGroup>
-    
+    <PackageVersion Include="Octokit" Version="11.0.1" />
+    <PackageVersion Include="HamedStack.VSTest" Version="1.0.0" />
   </ItemGroup>
   
 </Project>

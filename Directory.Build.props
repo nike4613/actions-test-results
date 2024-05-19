@@ -1,9 +1,10 @@
 <Project>
   
   <PropertyGroup>
-    <LangVersion>13</LangVersion>
+    <LangVersion>12</LangVersion>
     <Nullable>enable</Nullable>
     <WarningsAsErrors>$(WarningsAsErrors);nullable</WarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>8.0</AnalysisLevel>
