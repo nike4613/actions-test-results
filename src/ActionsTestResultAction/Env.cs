@@ -1,5 +1,4 @@
-﻿using Humanizer.Localisation;
-using Octokit;
+﻿using Octokit;
 
 namespace ActionsTestResultAction
 {

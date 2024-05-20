@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using ActionsTestResultAction;
 using ActionsTestResultAction.Webhook;
+using HamedStack.VSTest;
 using Serilog;
 using Serilog.Events;
 
@@ -29,6 +30,17 @@ try
 
     logger.Debug("Running for {Repository}", Env.GITHUB_REPOSITORY);
 
+    var results = new TestResultCollector();
+
+    foreach (var file in inputs.Files)
+    {
+        // only support TRX for now
+        var trxSrc = File.ReadAllText(file);
+        var trxModel = TestSchemaManager.ConvertToTestRun(trxSrc);
+        if (trxModel is null) continue;
+
+        results.RecordTrxTests(trxModel);
+    }
 
     return 0;
 }

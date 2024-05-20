@@ -73,7 +73,7 @@ namespace ActionsTestResultAction
 
     internal static class LoggerExtensions
     {
-        public struct GroupContext(ILogger logger) : IDisposable
+        public readonly struct GroupContext(ILogger logger) : IDisposable
         {
             private readonly ILogger logger = logger;
 

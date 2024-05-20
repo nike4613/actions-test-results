@@ -64,7 +64,7 @@ namespace ActionsTestResultAction
             var exclude = new List<string>();
             foreach (var line in filesInput.Split(separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
-                if (line is ['!', ..var rest])
+                if (line is ['!', .. var rest])
                 {
                     exclude.Add(rest);
                 }
