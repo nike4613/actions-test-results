@@ -50,8 +50,10 @@ try
         var trxModel = TestSchemaManager.ConvertToTestRun(trxSrc);
         if (trxModel is null) continue;
 
-        results.RecordTrxTests(trxModel);
+        results.RecordTrxTests(file, trxModel);
     }
+
+    var collection = results.Collect();
 
     return 0;
 }
