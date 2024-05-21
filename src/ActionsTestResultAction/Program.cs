@@ -232,7 +232,7 @@ try
                 }
                 else if (eventPayload.PullRequest is not null)
                 {
-                    logger.Debug("Adding comment on pull request");
+                    logger.Debug("Adding comment on pull request {PRNumber}", eventPayload.PullRequest.Number);
 
                     try
                     {
