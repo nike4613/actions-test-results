@@ -38,7 +38,7 @@
     <IsPublishable>true</IsPublishable>
     <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
 
-    <ContainerRepository>actions-test-results</ContainerRepository>
+    <ContainerRepository>nike4613/actions-test-results</ContainerRepository>
   </PropertyGroup>
   
   <ItemGroup>
