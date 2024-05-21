@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Text;
+using Humanizer;
 using Schemas.VisualStudio.TeamTest;
 
 namespace ActionsTestResultAction
@@ -111,7 +112,12 @@ namespace ActionsTestResultAction
                                 }
                                 _ = sb.Append("`" + suite + "`");
                             }
-                            _ = sb.Append(".*</sub>");
+                            _ = sb.AppendLine(".*</sub>").AppendLine();
+                        }
+
+                        if (run.Duration != default)
+                        {
+                            _ = sb.AppendLine($"<sub>*Took {run.Duration.Humanize(precision: 2)}*</sub>").AppendLine();
                         }
 
                         if (run.ExceptionMessage is not null)
@@ -121,7 +127,7 @@ namespace ActionsTestResultAction
                                 ```
                                 {run.ExceptionMessage}
                                 ```
-                                """);
+                                """).AppendLine();
                         }
 
                         if (run.ExceptionStackTrace is not null)
@@ -131,7 +137,7 @@ namespace ActionsTestResultAction
                                 ```
                                 {run.ExceptionStackTrace}
                                 ```
-                                """);
+                                """).AppendLine();
                         }
 
                         if (run.StdOut is not null)
@@ -142,7 +148,7 @@ namespace ActionsTestResultAction
                                 {run.StdOut}
                                 ```
                                 </details>
-                                """);
+                                """).AppendLine();
                         }
 
                         if (run.StdErr is not null)
@@ -153,7 +159,7 @@ namespace ActionsTestResultAction
                                 {run.StdErr}
                                 ```
                                 </details>
-                                """);
+                                """).AppendLine();
                         }
 
                         _ = sb.AppendLine("</details>");

@@ -30,16 +30,8 @@ inputs:
   files:
     description: 'File patterns of test result files. Relative paths are known to work best, while the non-Docker action also works with absolute paths. Supports "*", "**", "?", and "[]" character ranges. Use multiline string for multiple patterns. Patterns starting with "!" exclude the matching files. There have to be at least one pattern starting without a "!".'
     required: true
-  time_unit:
-    description: 'Time values in the test result files have this unit. Supports "seconds" and "milliseconds".'
-    default: 'seconds'
-    required: false
-  check_run:
-    description: 'Set to "true", the results are published as a check run, but it may not be associated with the workflow that ran this action.'
-    default: 'true'
-    required: false
-  job_summary:
-    description: 'Set to "true", the results are published as part of the job summary page of the workflow run.'
+  comment_on_commit:
+    description: 'Set to "true", the results are published as a comment on the PR, including more detail than the check summary..'
     default: 'true'
     required: false
   event_file:

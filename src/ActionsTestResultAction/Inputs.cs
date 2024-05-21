@@ -2,7 +2,6 @@
 using Actions.Glob;
 using ActionsTestResultAction.Webhook;
 using CommunityToolkit.Diagnostics;
-using Humanizer.Localisation;
 
 namespace ActionsTestResultAction
 {
@@ -14,9 +13,7 @@ namespace ActionsTestResultAction
         public const string CommentModeVar = "COMMENT_MODE";
         public const string FailOnVar = "FAIL_ON";
         public const string FilesVar = "FILES";
-        public const string TimeUnitVar = "TIME_UNIT";
-        public const string CheckRunVar = "CHECK_RUN";
-        public const string JobSummaryVar = "JOB_SUMMARY";
+        public const string CommentOnCommitVar = "COMMENT_ON_COMMIT";
 
         public const string EventFileVar = "EVENT_FILE";
         public const string EventNameVar = "EVENT_NAME";
@@ -24,11 +21,8 @@ namespace ActionsTestResultAction
         public string CheckName { get; }
         public string CommentTitle { get; }
         public CommentMode CommentMode { get; }
-        public FailOnEvent FailOn { get; }
         public ImmutableArray<string> Files { get; }
-        public TimeUnit TimeUnit { get; }
-        public bool CheckRun { get; }
-        public bool JobSummary { get; }
+        public bool CommentOnCommit { get; }
 
         public string CommitSha { get; }
 
@@ -45,13 +39,6 @@ namespace ActionsTestResultAction
                 "errors" => CommentMode.Errors,
                 "off" => CommentMode.Off,
                 var x => ThrowHelper.ThrowInvalidOperationException<CommentMode>($"Invalid value for comment_mode: {x}")
-            };
-            FailOn = Env.GetInput(FailOnVar)?.ToLowerInvariant() switch
-            {
-                "test failures" => FailOnEvent.TestFailures,
-                "errors" => FailOnEvent.Errors,
-                "nothing" or "never" => FailOnEvent.Nothing,
-                var x => ThrowHelper.ThrowInvalidOperationException<FailOnEvent>($"Invalid value for comment_mode: {x}")
             };
 
             var filesInput = Env.GetInput(FilesVar);
@@ -77,9 +64,7 @@ namespace ActionsTestResultAction
             var globber = Globber.Create(include, exclude);
             Files = globber.GlobFiles().ToImmutableArray();
 
-            TimeUnit = Env.GetInput(TimeUnitVar) is { } tu ? Enum.Parse<TimeUnit>(tu, true) : TimeUnit.Second;
-            CheckRun = Env.GetInput(CheckRunVar) is "true";
-            JobSummary = Env.GetInput(JobSummaryVar) is "true";
+            CommentOnCommit = Env.GetInput(CommentOnCommitVar) is "true";
 
             var commitSha = Env.GetInput(CommitVar);
             if (commitSha is null)
@@ -103,10 +88,4 @@ namespace ActionsTestResultAction
         Off
     }
 
-    internal enum FailOnEvent
-    {
-        TestFailures,
-        Errors,
-        Nothing
-    }
 }

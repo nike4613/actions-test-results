@@ -1,5 +1,4 @@
 ﻿using System.Collections.Immutable;
-using System.ComponentModel.Design;
 using System.Xml;
 using Schemas.VisualStudio.TeamTest;
 

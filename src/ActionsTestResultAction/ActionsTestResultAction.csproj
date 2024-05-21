@@ -20,8 +20,13 @@
   <ItemGroup>
     <PackageReference Include="GitHub.Actions.Glob" />
     <PackageReference Include="Humanizer.Core" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Octokit" />
     <PackageReference Include="HamedStack.VSTest" />
+    <PackageReference Include="Octokit.GraphQL" />
     <PackageReference Include="Serilog" />
     <PackageReference Include="SerilogAnalyzer" />
   </ItemGroup>

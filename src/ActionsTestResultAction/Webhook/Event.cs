@@ -21,6 +21,8 @@ namespace ActionsTestResultAction.Webhook
     internal sealed class PullRequest
     {
         public string Url { get; set; } = "";
+        public int Id { get; set; }
+        public int Number { get; set; }
         public PRHead Head { get; set; } = new();
     }
 

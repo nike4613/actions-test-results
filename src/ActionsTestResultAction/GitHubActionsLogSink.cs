@@ -23,11 +23,23 @@ namespace ActionsTestResultAction
                 case LogEventLevel.Debug:
                 case LogEventLevel.Verbose:
                     Console.WriteLine("::debug::" + logEvent.RenderMessage());
+                    if (logEvent.Exception is not null)
+                    {
+                        var str = logEvent.Exception.ToString();
+                        foreach (var line in str.Split('\r', '\n'))
+                        {
+                            Console.WriteLine("::debug::" + line);
+                        }
+                    }
                     break;
 
                 default:
                 case LogEventLevel.Information:
                     Console.WriteLine(logEvent.RenderMessage());
+                    if (logEvent.Exception is not null)
+                    {
+                        Console.WriteLine(logEvent.Exception);
+                    }
                     break;
 
                 case LogEventLevel.Warning:
@@ -53,13 +65,23 @@ namespace ActionsTestResultAction
                         title = titleProp;
                     }
 
-                    if (file != null)
+                    message ??= "";
+
+                    if (logEvent.Exception is not null)
                     {
-                        Console.WriteLine($"::{kind} file={file},title={title}::{message}");
+                        message += "\n" + logEvent.Exception.ToString();
                     }
-                    else
+
+                    foreach (var line in message.Split('\r', '\n'))
                     {
-                        Console.WriteLine($"::{kind} title={title}::{message}");
+                        if (file != null)
+                        {
+                            Console.WriteLine($"::{kind} file={file},title={title}::{line}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"::{kind} title={title}::{line}");
+                        }
                     }
                     break;
             }
