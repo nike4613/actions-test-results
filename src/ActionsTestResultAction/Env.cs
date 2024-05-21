@@ -9,8 +9,10 @@ namespace ActionsTestResultAction
     {
         public static readonly string? GITHUB_SERVER_URL = Environment.GetEnvironmentVariable(nameof(GITHUB_SERVER_URL));
         public static readonly string? GITHUB_API_URL = Environment.GetEnvironmentVariable(nameof(GITHUB_API_URL));
+        public static readonly string? GITHUB_GRAPHQL_URL = Environment.GetEnvironmentVariable(nameof(GITHUB_GRAPHQL_URL));
 
         public static readonly Uri ApiUri = GITHUB_API_URL is not null ? new Uri(GITHUB_API_URL) : GitHubClient.GitHubApiUrl;
+        public static readonly Uri GraphQLUri = GITHUB_GRAPHQL_URL is not null ? new Uri(GITHUB_GRAPHQL_URL) : GQLConnection.GithubApiUri;
 
         public static readonly string? GITHUB_TOKEN = GetInput(nameof(GITHUB_TOKEN)) ?? Environment.GetEnvironmentVariable(nameof(GITHUB_TOKEN));
         public static readonly string? GITHUB_EVENT_NAME = GetInput(Inputs.EventNameVar) ?? Environment.GetEnvironmentVariable(nameof(GITHUB_EVENT_NAME));
@@ -40,7 +42,7 @@ namespace ActionsTestResultAction
             => new(product, ApiUri, CredentialStore.Instance);
 
         public static GQLConnection CreateGQLConnection(GQLProductHeaderValue product)
-            => new(product, ApiUri, GITHUB_TOKEN);
+            => new(product, GraphQLUri, GITHUB_TOKEN);
 
         public static GitHubClient CreateClient(ProductHeaderValue product)
             => new(CreateConnection(product));
