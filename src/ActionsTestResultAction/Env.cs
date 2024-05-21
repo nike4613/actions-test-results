@@ -41,5 +41,6 @@ namespace ActionsTestResultAction
             => new(CreateConnection(product));
 
         public static string? GetInput(string name) => Environment.GetEnvironmentVariable("INPUT_" + name.ToUpperInvariant());
+
     }
 }

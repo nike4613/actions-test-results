@@ -4,7 +4,7 @@ using Schemas.VisualStudio.TeamTest;
 
 namespace ActionsTestResultAction
 {
-    internal sealed class TestResultCollector
+    internal sealed partial class TestResultCollector
     {
         private readonly Dictionary<Guid, Test> testMap = new();
         private readonly List<TestSuiteRun> suiteRuns = new();
@@ -97,7 +97,7 @@ namespace ActionsTestResultAction
 
                     // create the run object
                     var outcome = Enum.Parse<TestOutcome>(testResult.Outcome ?? nameof(TestOutcome.Inconclusive));
-                    var run = new TestRun(test, testResult.TestName, runDuration, outcome)
+                    var run = new TestRun(test, id, testResult.TestName, runDuration, outcome)
                     {
                         StdOut = stdout,
                         StdErr = stderr,
@@ -202,6 +202,138 @@ namespace ActionsTestResultAction
                     return obj.ToString();
             }
         }
+
+        public TestResultCollection Collect(bool showDifferentFailingRuns = false, int maxRunsToShow = 2)
+        {
+            var totalTests = 0;
+            var totalExecuted = 0;
+            var totalPassed = 0;
+            var totalFailed = 0;
+            var totalErrored = 0;
+
+            // go through all suites and aggregate them
+            var testSuitesBuilder = ImmutableArray.CreateBuilder<TestSuiteRun>();
+            foreach (var suite in suiteRuns)
+            {
+                testSuitesBuilder.Add(suite);
+
+                totalTests += suite.Total;
+                totalExecuted += suite.Executed;
+                totalPassed += suite.Passed;
+                totalFailed += suite.Failed;
+                totalErrored += suite.Errored;
+            }
+
+            // now go through all tests, and work out which ones should be shown
+            var testsBuilder = ImmutableArray.CreateBuilder<Test>();
+            var showTestsBuilder = ImmutableArray.CreateBuilder<ShownTest>();
+            foreach (var test in testMap.Values)
+            {
+                testsBuilder.Add(test);
+
+                var showReason = ShowReason.None;
+                var anyPassed = false;
+                var showRunsBuilder = ImmutableArray.CreateBuilder<TestRun>();
+                foreach (var run in test.Runs)
+                {
+                    switch (run.Outcome)
+                    {
+                        case TestOutcome.Passed:
+                            anyPassed = true;
+                            continue;
+                        case TestOutcome.Failed:
+                            if (showReason is not ShowReason.Errored)
+                            {
+                                showReason = ShowReason.FailingSometimes;
+                            }
+                            showRunsBuilder.Add(run);
+                            continue;
+                        case TestOutcome.Error:
+                            showReason = ShowReason.Errored;
+                            // insert erroring tests AT the front to make sure we show them preferentially
+                            showRunsBuilder.Insert(0, run);
+                            continue;
+                        default: continue;
+                    }
+                }
+
+                if (showReason == ShowReason.None)
+                {
+                    // no notable runs; skip
+                    continue;
+                }
+
+                if (!anyPassed && showReason is ShowReason.FailingSometimes)
+                {
+                    showReason = ShowReason.FailingAlways;
+                }
+
+                var hasHiddenNotableRuns = false;
+                // now we want to filter shown tests according to parameters
+                if (showDifferentFailingRuns)
+                {
+                    // filter for unique failure messages
+                    var set = new HashSet<(string? Message, string? Stack)>();
+                    for (var i = 0; i < showRunsBuilder.Count; i++)
+                    {
+                        var run = showRunsBuilder[i];
+                        // filter according to the set
+                        if (!set.Add((run.ExceptionMessage, run.ExceptionStackTrace)))
+                        {
+                            // this message was already added, remove it
+                            showRunsBuilder.RemoveAt(i--);
+                            hasHiddenNotableRuns = true;
+                        }
+                    }
+                }
+                else
+                {
+                    // filter all but 1 run of each outcome kind
+                    var set = new HashSet<TestOutcome>();
+                    for (var i = 0; i < showRunsBuilder.Count; i++)
+                    {
+                        var run = showRunsBuilder[i];
+                        // filter according to the set
+                        if (!set.Add(run.Outcome))
+                        {
+                            // this outcome was already found, remove this instance
+                            showRunsBuilder.RemoveAt(i--);
+                            hasHiddenNotableRuns = true;
+                        }
+                    }
+                }
+
+                // filter to the max runs to show
+                for (var i = maxRunsToShow; i < showRunsBuilder.Count; i++)
+                {
+                    showRunsBuilder.RemoveAt(i--);
+                    hasHiddenNotableRuns = true;
+                }
+
+                // record it
+                showTestsBuilder.Add(new(showReason, test, showRunsBuilder.DrainToImmutable(), hasHiddenNotableRuns));
+            }
+
+            // create the resulting collection
+            return new(testsBuilder.DrainToImmutable(), testSuitesBuilder.DrainToImmutable())
+            {
+                Total = totalTests,
+                Executed = totalExecuted,
+                Passed = totalPassed,
+                Failed = totalFailed,
+                Errored = totalErrored,
+
+                ShowTests = showTestsBuilder.DrainToImmutable(),
+            };
+        }
+    }
+
+    internal enum ShowReason
+    {
+        None = 0,
+        FailingAlways,
+        FailingSometimes,
+        Errored,
     }
 
     internal sealed class TestSuiteRun
@@ -251,6 +383,7 @@ namespace ActionsTestResultAction
     internal sealed class TestRun
     {
         public Test Test { get; }
+        public Guid TestSuite { get; }
         public string Name { get; }
 
         public TimeSpan Duration { get; }
@@ -264,9 +397,10 @@ namespace ActionsTestResultAction
 
         public ImmutableArray<string> ExtraMessages { get; init; }
 
-        public TestRun(Test test, string name, TimeSpan duration, TestOutcome outcome)
+        public TestRun(Test test, Guid testSuite, string name, TimeSpan duration, TestOutcome outcome)
         {
             Test = test;
+            TestSuite = testSuite;
             Name = name;
             Duration = duration;
             Outcome = outcome;

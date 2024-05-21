@@ -20,6 +20,17 @@ try
         logger.Error("Event payload is null");
         return 1;
     }
+    if (Env.GITHUB_REPOSITORY_ID is not { } repoIdString)
+    {
+        logger.Error("GITHUB_REPOSITORY_ID not specified");
+        return 1;
+    }
+    if (!long.TryParse(repoIdString, out var repoId))
+    {
+        logger.Error("GITHUB_REPOSITORY_ID is not a valid number {ProvidedRepoId}", repoIdString);
+        return 1;
+    }
+
     var inputs = Inputs.Get(Env.GITHUB_EVENT_NAME ?? "", eventPayload);
 
     if (inputs.Files.Length == 0)
