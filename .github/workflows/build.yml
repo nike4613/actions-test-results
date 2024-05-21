@@ -13,6 +13,8 @@ jobs:
     permissions:
       packages: write
       contents: read
+    env:
+      ContainerRegistry: ghcr.io
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -21,11 +23,14 @@ jobs:
          cache: true
          cache-dependency-path: src/ActionsTestResultAction/packages.lock.json
 
-      - name: Log in to registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.ContainerRegistry }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build image
         env:
-          ContainerImageTags: c-${{ github.sha }};${{ github.ref_name }}
-          ContainerRegistry: ghcr.io
+          ContainerImageTags: ${{ github.sha }};${{ github.ref_name }}
         run: dotnet publish -t:PublishContainer -r linux-musl-x64
