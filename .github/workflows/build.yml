@@ -33,6 +33,7 @@ jobs:
       - name: Build image
         env:
           ContainerImageTags: ${{ github.sha }};${{ github.ref_name }}
+          ContainerWorkingDirectory: /app
         run: dotnet publish -t:PublishContainer -r linux-musl-x64 -bl
 
       - name: Upload binlogs

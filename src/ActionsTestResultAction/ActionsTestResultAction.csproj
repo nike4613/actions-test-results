@@ -44,6 +44,9 @@
   <ItemGroup>
     <ContainerLabel Include="repository" Value="https://github.com/nike4613/actions-test-results" />
     <ContainerLabel Include="com.github.actions.name" Value="Present Test Results" />
+
+    <ContainerAppCommand Include="dotnet" />
+    <ContainerAppCommand Include="$(ContainerWorkingDirectory)/$(AssemblyName).dll" />
   </ItemGroup>
 
 </Project>
