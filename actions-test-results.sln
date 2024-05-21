@@ -29,6 +29,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		.github\workflows\build.yml = .github\workflows\build.yml
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "master", "master", "{3DAF1B1B-9212-4A37-A8A5-15223C1AFF69}"
+	ProjectSection(SolutionItems) = preProject
+		master\action.yml = master\action.yml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,6 +52,7 @@ Global
 		{796FF0F8-C214-4A4B-9312-8FC9D31AB96A} = {977DD606-D442-4A4D-8226-273B6C35417F}
 		{A1A5373A-BA63-48A9-8C6E-AE27508E86D6} = {F4CF1767-AEFD-4152-A3DA-155C5840E236}
 		{F8977C1A-60F1-4851-9863-920BC45411E6} = {A1A5373A-BA63-48A9-8C6E-AE27508E86D6}
+		{3DAF1B1B-9212-4A37-A8A5-15223C1AFF69} = {F4CF1767-AEFD-4152-A3DA-155C5840E236}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {956BA7FE-33E8-435D-B781-D272CCA0A6AF}

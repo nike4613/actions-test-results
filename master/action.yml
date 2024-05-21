@@ -1,0 +1,46 @@
+﻿name: actions-test-results
+
+description: ' '
+
+author: DaNike
+
+branding:
+  icon: play
+  color: purple
+  
+inputs:
+  commit:
+    description: 'Commit SHA to which test results are published. Only needed if the value of GITHUB_SHA does not work for you.'
+    required: false
+  check_name:
+    description: 'Name of the created check run.'
+    default: 'Test Results'
+    required: false
+  comment_title:
+    description: 'An alternative title for the pull request comment. Defaults to value of check_name input.'
+    required: false
+  comment_mode:
+    description: 'The action posts comments to pull requests that are associated with the commit. Set to "always" - always comment, "failures" - when failures or errors exist, "errors" - when (only) errors exist, "off" - to not create pull request comments.'
+    default: 'failures'
+    required: false
+  fail_on:
+    description: 'The created test result check run has failure state if any test fails or test errors occur. Never fails when set to "nothing", fails only on errors when set to "errors". Default is "test failures".'
+    default: 'test failures'
+    required: false
+  files:
+    description: 'File patterns of test result files. Relative paths are known to work best, while the non-Docker action also works with absolute paths. Supports "*", "**", "?", and "[]" character ranges. Use multiline string for multiple patterns. Patterns starting with "!" exclude the matching files. There have to be at least one pattern starting without a "!".'
+    required: true
+  comment_on_commit:
+    description: 'Set to "true", the results are published as a comment on the commit, including more detail than the check summary.'
+    default: 'true'
+    required: false
+  event_file:
+    description: 'An alternative event file to use. Useful to replace a "workflow_run" event file with the actual source event file.'
+    required: false
+  event_name:
+    description: 'An alternative event name to use. Useful to replace a "workflow_run" event name with the actual source event name: github.event.workflow_run.event.'
+    required: false
+  
+runs:
+  using: docker
+  image: ghcr.io/nike4613/actions-test-results:master
