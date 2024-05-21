@@ -39,6 +39,7 @@
     <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
 
     <ContainerRepository>actions-test-results</ContainerRepository>
+    <ContainerRegistry>ghcr.io</ContainerRegistry>
   </PropertyGroup>
   
   <ItemGroup>

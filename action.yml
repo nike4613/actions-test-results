@@ -42,5 +42,5 @@ inputs:
     required: false
   
 runs:
-    using: docker
-    image: Dockerfile
+  using: docker
+  image: ghcr.io/nike4613/actions-test-results:${{ github.action_ref }}

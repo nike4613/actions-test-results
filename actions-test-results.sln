@@ -23,6 +23,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{977DD606-D44
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ActionsTestResultAction", "src\ActionsTestResultAction\ActionsTestResultAction.csproj", "{796FF0F8-C214-4A4B-9312-8FC9D31AB96A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{A1A5373A-BA63-48A9-8C6E-AE27508E86D6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{F8977C1A-60F1-4851-9863-920BC45411E6}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\build.yml = .github\workflows\build.yml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +46,8 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{796FF0F8-C214-4A4B-9312-8FC9D31AB96A} = {977DD606-D442-4A4D-8226-273B6C35417F}
+		{A1A5373A-BA63-48A9-8C6E-AE27508E86D6} = {F4CF1767-AEFD-4152-A3DA-155C5840E236}
+		{F8977C1A-60F1-4851-9863-920BC45411E6} = {A1A5373A-BA63-48A9-8C6E-AE27508E86D6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {956BA7FE-33E8-435D-B781-D272CCA0A6AF}

@@ -1,0 +1,30 @@
+name: Build container
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - v*
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+         global-json-file: global.json
+         cache: true
+         cache-dependency-path: src/ActionsTestResultAction/packages.lock.json
+
+      - name: Log in to registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build image
+        env:
+          ContainerImageTags: ${{ github.sha }};${{ github.ref_name }}
+        run: dotnet publish -t:PublishContainer -r linux-musl-x64
