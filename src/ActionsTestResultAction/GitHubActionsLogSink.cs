@@ -8,6 +8,7 @@ namespace ActionsTestResultAction
     {
         public const string BeginGroupProperty = "GHA-BeginGroup";
         public const string EndGroupProperty = "GHA-EndGroup";
+        internal static readonly char[] separator = new[] { '\r', '\n' };
 
         public void Emit(LogEvent logEvent)
         {
@@ -26,9 +27,9 @@ namespace ActionsTestResultAction
                     if (logEvent.Exception is not null)
                     {
                         var str = logEvent.Exception.ToString();
-                        foreach (var line in str.Split('\r', '\n'))
+                        foreach (var line in str.Split(separator, StringSplitOptions.RemoveEmptyEntries))
                         {
-                            Console.WriteLine("::debug::" + line.Trim());
+                            Console.WriteLine("::debug::" + line);
                         }
                     }
                     break;
@@ -72,15 +73,15 @@ namespace ActionsTestResultAction
                         message += "\n" + logEvent.Exception.ToString();
                     }
 
-                    foreach (var line in message.Split('\r', '\n'))
+                    foreach (var line in message.Split(separator, StringSplitOptions.RemoveEmptyEntries))
                     {
                         if (file != null)
                         {
-                            Console.WriteLine($"::{kind} file={file},title={title}::{line.Trim()}");
+                            Console.WriteLine($"::{kind} file={file},title={title}::{line}");
                         }
                         else
                         {
-                            Console.WriteLine($"::{kind} title={title}::{line.Trim()}");
+                            Console.WriteLine($"::{kind} title={title}::{line}");
                         }
                     }
                     break;
