@@ -31,7 +31,7 @@ inputs:
     description: 'File patterns of test result files. Relative paths are known to work best, while the non-Docker action also works with absolute paths. Supports "*", "**", "?", and "[]" character ranges. Use multiline string for multiple patterns. Patterns starting with "!" exclude the matching files. There have to be at least one pattern starting without a "!".'
     required: true
   comment_on_commit:
-    description: 'Set to "true", the results are published as a comment on the PR, including more detail than the check summary..'
+    description: 'Set to "true", the results are published as a comment on the commit, including more detail than the check summary.'
     default: 'true'
     required: false
   event_file:
@@ -43,4 +43,4 @@ inputs:
   
 runs:
     using: docker
-    image: ghcr.io/nike4613/actions-test-results:0.1.0
+    image: Dockerfile

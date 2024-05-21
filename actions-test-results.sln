@@ -12,6 +12,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Directory.Build.rsp = Directory.Build.rsp
 		Directory.Build.targets = Directory.Build.targets
 		Directory.Packages.props = Directory.Packages.props
+		Dockerfile = Dockerfile
 		global.json = global.json
 		LICENSE = LICENSE
 		nuget.config = nuget.config
@@ -20,7 +21,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{977DD606-D442-4A4D-8226-273B6C35417F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ActionsTestResultAction", "src\ActionsTestResultAction\ActionsTestResultAction.csproj", "{796FF0F8-C214-4A4B-9312-8FC9D31AB96A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ActionsTestResultAction", "src\ActionsTestResultAction\ActionsTestResultAction.csproj", "{796FF0F8-C214-4A4B-9312-8FC9D31AB96A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
