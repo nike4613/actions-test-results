@@ -8,6 +8,8 @@ using Schemas.VisualStudio.TeamTest;
 using Serilog;
 using Serilog.Events;
 
+const string MarkerString = "<!-- GHA-Test-Results-Comment -->\n";
+
 var logger = new LoggerConfiguration()
     .MinimumLevel.Is(Env.Debug ? LogEventLevel.Verbose : LogEventLevel.Information)
     .WriteTo.Sink(new GitHubActionsLogSink())
@@ -113,6 +115,82 @@ try
         logger.Error(e, "Could not create check");
     }
 
+    if (eventPayload.PullRequest is not null)
+    {
+        // this is a PR, we always want to hide outdated comments
+        var commentsToMinimize = new HashSet<string>();
+
+        try
+        {
+            var selfUser = await client.User.Current().ConfigureAwait(false);
+
+            // now, lets go through the existing comments on the PR to find and hide the old one
+            foreach (var comment in await client.Issue.Comment.GetAllForIssue(repoId, eventPayload.PullRequest.Number).ConfigureAwait(false))
+            {
+                /*
+                // don't hide our new comment
+                if (comment.Id == newComment.Id) continue;
+                */
+
+                // don't touch any other users' comments
+                if (comment.User.Id != selfUser.Id) continue;
+
+                // don't touch any comments that don't look like ours
+                if (!comment.Body.StartsWith(MarkerString, StringComparison.Ordinal)) continue;
+
+                // this comment looks like one of ours; hide it (or rather, add it to a list to hide. We need to hit the GraphQL API to do so.)
+                _ = commentsToMinimize.Add(comment.NodeId);
+            }
+        }
+        catch (Exception e)
+        {
+            logger.Error(e, "Could not get comments on PR #{PRNumber}", eventPayload.PullRequest.Number);
+        }
+
+        try
+        {
+            var realToMinimize = new List<ID>();
+
+            // first, filter our updates by comments we care about that aren't already minimized
+            var checkMinimizedResult = await gql
+                .Run(gqlCheckMinimized, new Dictionary<string, object> { { "Nodes", commentsToMinimize } })
+                .ConfigureAwait(false);
+            foreach (var item in checkMinimizedResult)
+            {
+                if (!item.IsMinimized)
+                {
+                    realToMinimize.Add(item.Id);
+                }
+            }
+
+            // now we can go and minimize them
+            foreach (var id in realToMinimize)
+            {
+                var result = await gql
+                    .Run(gqlUpdateMinimized, new Dictionary<string, object>
+                    {
+                                    {
+                                        "MinimizePayload",
+                                        new Octokit.GraphQL.Model.MinimizeCommentInput()
+                                        {
+                                            Classifier = Octokit.GraphQL.Model.ReportedContentClassifiers.Outdated,
+                                            ClientMutationId = "nike4613/actions-test-results",
+                                            SubjectId = id,
+                                        }
+                                    }
+                    }).ConfigureAwait(false);
+                if (!result)
+                {
+                    logger.Warning("Could not minimize comment with node ID {ID}", id.Value);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            logger.Error(e, "Could not minimize comments on PR #{PRNumber}", eventPayload.PullRequest.Number);
+        }
+    }
+
     switch (inputs.CommentMode)
     {
         case CommentMode.Failures:
@@ -142,81 +220,16 @@ try
                 }
                 else if (eventPayload.PullRequest is not null)
                 {
-                    // this is a PR, we want to comment on it as well, but only if we haven't already commented; in that case, we want to mark the old one as obsolete
-                    var commentsToMinimize = new HashSet<string>();
-
                     try
                     {
-                        const string MarkerString = "<!-- GHA-Test-Results-Comment -->\n";
                         var prCommentBody = MarkerString + body;
 
                         // first, lets create the comment
                         var newComment = await client.Issue.Comment.Create(repoId, eventPayload.PullRequest.Number, prCommentBody).ConfigureAwait(false);
-
-                        var selfUser = await client.User.Current().ConfigureAwait(false);
-
-                        // now, lets go through the existing comments on the PR to find and hide the old one
-                        foreach (var comment in await client.Issue.Comment.GetAllForIssue(repoId, eventPayload.PullRequest.Number).ConfigureAwait(false))
-                        {
-                            // don't hide our new comment
-                            if (comment.Id == newComment.Id) continue;
-
-                            // don't touch any other users' comments
-                            if (comment.User.Id != selfUser.Id) continue;
-
-                            // don't touch any comments that don't look like ours
-                            if (!comment.Body.StartsWith(MarkerString, StringComparison.Ordinal)) continue;
-
-                            // this comment looks like one of ours; hide it (or rather, add it to a list to hide. We need to hit the GraphQL API to do so.)
-                            _ = commentsToMinimize.Add(comment.NodeId);
-                        }
                     }
                     catch (Exception e)
                     {
                         logger.Error(e, "Could not comment on PR #{PRNumber}", eventPayload.PullRequest.Number);
-                    }
-
-                    try
-                    {
-                        var realToMinimize = new List<ID>();
-
-                        // first, filter our updates by comments we care about that aren't already minimized
-                        var checkMinimizedResult = await gql
-                            .Run(gqlCheckMinimized, new Dictionary<string, object> { { "Nodes", commentsToMinimize } })
-                            .ConfigureAwait(false);
-                        foreach (var item in checkMinimizedResult)
-                        {
-                            if (!item.IsMinimized)
-                            {
-                                realToMinimize.Add(item.Id);
-                            }
-                        }
-
-                        // now we can go and minimize them
-                        foreach (var id in realToMinimize)
-                        {
-                            var result = await gql
-                                .Run(gqlUpdateMinimized, new Dictionary<string, object>
-                                {
-                                    {
-                                        "MinimizePayload",
-                                        new Octokit.GraphQL.Model.MinimizeCommentInput()
-                                        {
-                                            Classifier = Octokit.GraphQL.Model.ReportedContentClassifiers.Outdated,
-                                            ClientMutationId = "nike4613/actions-test-results",
-                                            SubjectId = id,
-                                        }
-                                    }
-                                }).ConfigureAwait(false);
-                            if (!result)
-                            {
-                                logger.Warning("Could not minimize comment with node ID {ID}", id.Value);
-                            }
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        logger.Error(e, "Could not minimize comments on PR #{PRNumber}", eventPayload.PullRequest.Number);
                     }
                 }
             }
