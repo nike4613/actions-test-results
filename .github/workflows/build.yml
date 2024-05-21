@@ -33,4 +33,12 @@ jobs:
       - name: Build image
         env:
           ContainerImageTags: ${{ github.sha }};${{ github.ref_name }}
-        run: dotnet publish -t:PublishContainer -r linux-musl-x64
+        run: dotnet publish -t:PublishContainer -r linux-musl-x64 -bl
+
+      - name: Upload binlogs
+        uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: binlogs-${{ runner.os }}
+          path: '*.binlog'
+          retention-days: 7
