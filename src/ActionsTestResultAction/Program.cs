@@ -3,6 +3,7 @@ using ActionsTestResultAction;
 using ActionsTestResultAction.Webhook;
 using HamedStack.VSTest;
 using Octokit;
+using Octokit.GraphQL;
 using Schemas.VisualStudio.TeamTest;
 using Serilog;
 using Serilog.Events;
@@ -12,9 +13,21 @@ var logger = new LoggerConfiguration()
     .WriteTo.Sink(new GitHubActionsLogSink())
     .CreateLogger();
 
+var gqlCheckMinimized = new Query()
+    .Nodes(Octokit.GraphQL.Variable.Var("Nodes"))
+    .OfType<Octokit.GraphQL.Model.IssueComment>()
+    .Select(c => new { c.Id, c.IsMinimized })
+    .Compile();
+
+var gqlUpdateMinimized = new Mutation()
+    .MinimizeComment(Octokit.GraphQL.Variable.Var("MinimizePayload"))
+    .Select(p => p.MinimizedComment.IsMinimized)
+    .Compile();
+
 try
 {
     var client = Env.CreateClient(new("nike4613/actions-test-results"));
+    var gql = Env.CreateGQLConnection(new("nike4613/actions-test-results"));
 
     var eventPayload = JsonSerializer.Deserialize(
         await File.ReadAllTextAsync(Env.GITHUB_EVENT_PAYLOAD ?? "event.json").ConfigureAwait(false),
@@ -130,6 +143,8 @@ try
                 else if (eventPayload.PullRequest is not null)
                 {
                     // this is a PR, we want to comment on it as well, but only if we haven't already commented; in that case, we want to mark the old one as obsolete
+                    var commentsToMinimize = new HashSet<string>();
+
                     try
                     {
                         const string MarkerString = "<!-- GHA-Test-Results-Comment -->\n";
@@ -153,11 +168,55 @@ try
                             if (!comment.Body.StartsWith(MarkerString, StringComparison.Ordinal)) continue;
 
                             // this comment looks like one of ours; hide it (or rather, add it to a list to hide. We need to hit the GraphQL API to do so.)
+                            _ = commentsToMinimize.Add(comment.NodeId);
                         }
                     }
                     catch (Exception e)
                     {
                         logger.Error(e, "Could not comment on PR #{PRNumber}", eventPayload.PullRequest.Number);
+                    }
+
+                    try
+                    {
+                        var realToMinimize = new List<ID>();
+
+                        // first, filter our updates by comments we care about that aren't already minimized
+                        var checkMinimizedResult = await gql
+                            .Run(gqlCheckMinimized, new Dictionary<string, object> { { "Nodes", commentsToMinimize } })
+                            .ConfigureAwait(false);
+                        foreach (var item in checkMinimizedResult)
+                        {
+                            if (!item.IsMinimized)
+                            {
+                                realToMinimize.Add(item.Id);
+                            }
+                        }
+
+                        // now we can go and minimize them
+                        foreach (var id in realToMinimize)
+                        {
+                            var result = await gql
+                                .Run(gqlUpdateMinimized, new Dictionary<string, object>
+                                {
+                                    {
+                                        "MinimizePayload",
+                                        new Octokit.GraphQL.Model.MinimizeCommentInput()
+                                        {
+                                            Classifier = Octokit.GraphQL.Model.ReportedContentClassifiers.Outdated,
+                                            ClientMutationId = "nike4613/actions-test-results",
+                                            SubjectId = id,
+                                        }
+                                    }
+                                }).ConfigureAwait(false);
+                            if (!result)
+                            {
+                                logger.Warning("Could not minimize comment with node ID {ID}", id.Value);
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        logger.Error(e, "Could not minimize comments on PR #{PRNumber}", eventPayload.PullRequest.Number);
                     }
                 }
             }
