@@ -6,7 +6,9 @@
     <RuntimeIdentifiers>win-x64;linux-x64;linux-musl-x64</RuntimeIdentifiers>
     <ImplicitUsings>enable</ImplicitUsings>
     
-    <PublishAot>true</PublishAot>
+    <PublishAot>false</PublishAot>
+    <PublishTrimmed>true</PublishTrimmed>
+    <PublishReadyToRun>true</PublishReadyToRun>
     <InvariantGlobalization>true</InvariantGlobalization>
 
     <VersionPrefix>0.1.0</VersionPrefix>

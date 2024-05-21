@@ -28,7 +28,7 @@ namespace ActionsTestResultAction
                         var str = logEvent.Exception.ToString();
                         foreach (var line in str.Split('\r', '\n'))
                         {
-                            Console.WriteLine("::debug::" + line);
+                            Console.WriteLine("::debug::" + line.Trim());
                         }
                     }
                     break;
@@ -76,11 +76,11 @@ namespace ActionsTestResultAction
                     {
                         if (file != null)
                         {
-                            Console.WriteLine($"::{kind} file={file},title={title}::{line}");
+                            Console.WriteLine($"::{kind} file={file},title={title}::{line.Trim()}");
                         }
                         else
                         {
-                            Console.WriteLine($"::{kind} title={title}::{line}");
+                            Console.WriteLine($"::{kind} title={title}::{line.Trim()}");
                         }
                     }
                     break;

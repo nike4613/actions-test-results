@@ -26,8 +26,8 @@ var gqlUpdateMinimized = new Mutation()
 
 try
 {
-    var client = Env.CreateClient(new("nike4613/actions-test-results"));
-    var gql = Env.CreateGQLConnection(new("nike4613/actions-test-results"));
+    var client = Env.CreateClient(new("nike4613-actions-test-results", "1.0.0"));
+    var gql = Env.CreateGQLConnection(new("nike4613-actions-test-results", "1.0.0"));
 
     var eventPayload = JsonSerializer.Deserialize(
         await File.ReadAllTextAsync(Env.GITHUB_EVENT_PAYLOAD ?? "event.json").ConfigureAwait(false),
