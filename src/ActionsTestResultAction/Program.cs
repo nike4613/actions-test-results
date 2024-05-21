@@ -64,11 +64,13 @@ try
 
     foreach (var file in inputs.Files)
     {
+        logger.Debug("Loading file {File}", file);
         // only support TRX for now
         var trxSrc = await File.ReadAllTextAsync(file).ConfigureAwait(false);
         var trxModel = TestSchemaManager.ConvertToTestRun(trxSrc);
         if (trxModel is null) continue;
 
+        logger.Debug("Loaded model");
         results.RecordTrxTests(file, trxModel);
     }
 
@@ -76,12 +78,15 @@ try
     var collection = results.Collect();
 
     // now report it appropriately
+    logger.Debug("Found {Suites} test suites, with {Tests} tests", collection.TestSuiteRuns.Length, collection.Tests.Length);
 
     // always create a check
     // for our check, we'll always create diags for the relevant output tests, but once only
     try
     {
-        var checkOutput = new NewCheckRunOutput(inputs.CheckName, collection.Format(inputs.CheckName, TestResultFormatMode.Summary))
+        logger.Debug("Adding check");
+
+        var checkOutput = new NewCheckRunOutput(inputs.CheckName, collection.Format(null, TestResultFormatMode.Summary))
         {
             Annotations = collection.ShowTests
                 .Select(test =>
@@ -120,6 +125,7 @@ try
         // this is a PR, we always want to hide outdated comments
         var commentsToMinimize = new HashSet<string>();
 
+        logger.Debug("Hiding existing PR comments");
         try
         {
             var selfUser = await client.User.Current().ConfigureAwait(false);
@@ -147,6 +153,8 @@ try
             logger.Error(e, "Could not get comments on PR #{PRNumber}", eventPayload.PullRequest.Number);
         }
 
+        logger.Debug("Found {NumComments} comments to minimize", commentsToMinimize.Count);
+
         try
         {
             var realToMinimize = new List<ID>();
@@ -163,21 +171,23 @@ try
                 }
             }
 
+            logger.Debug("Filtered to {NumComments} to send req for", realToMinimize.Count);
+
             // now we can go and minimize them
             foreach (var id in realToMinimize)
             {
                 var result = await gql
                     .Run(gqlUpdateMinimized, new Dictionary<string, object>
                     {
-                                    {
-                                        "MinimizePayload",
-                                        new Octokit.GraphQL.Model.MinimizeCommentInput()
-                                        {
-                                            Classifier = Octokit.GraphQL.Model.ReportedContentClassifiers.Outdated,
-                                            ClientMutationId = "nike4613/actions-test-results",
-                                            SubjectId = id,
-                                        }
-                                    }
+                        {
+                            "MinimizePayload",
+                            new Octokit.GraphQL.Model.MinimizeCommentInput()
+                            {
+                                Classifier = Octokit.GraphQL.Model.ReportedContentClassifiers.Outdated,
+                                ClientMutationId = "nike4613/actions-test-results",
+                                SubjectId = id,
+                            }
+                        }
                     }).ConfigureAwait(false);
                 if (!result)
                 {
@@ -208,6 +218,8 @@ try
 
                 if (inputs.CommentOnCommit && eventPayload.PullRequest is null)
                 {
+                    logger.Debug("Adding comment on commit");
+
                     // user wants us to comment on commit, and this isn't part of a PR
                     try
                     {
@@ -220,6 +232,8 @@ try
                 }
                 else if (eventPayload.PullRequest is not null)
                 {
+                    logger.Debug("Adding comment on pull request");
+
                     try
                     {
                         var prCommentBody = MarkerString + body;
