@@ -246,7 +246,7 @@ try
 
                     try
                     {
-                        var prCommentBody = MarkerString + body;
+                        var prCommentBody = MarkerString + "\n" + body;
 
                         // first, lets create the comment
                         var newComment = await client.Issue.Comment.Create(repoId, eventPayload.PullRequest.Number, prCommentBody).ConfigureAwait(false);
