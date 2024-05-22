@@ -51,4 +51,4 @@ inputs:
   
 runs:
   using: docker
-  image: docker://ghcr.io/nike4613/actions-test-results:${{ github.action_ref }}
+  image: docker://ghcr.io/nike4613/actions-test-results:v1
