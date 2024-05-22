@@ -1,6 +1,5 @@
 ﻿using System.Collections.Immutable;
 using System.Text;
-using Humanizer;
 using Schemas.VisualStudio.TeamTest;
 
 namespace ActionsTestResultAction
@@ -121,7 +120,7 @@ namespace ActionsTestResultAction
 
                         if (run.Duration != default)
                         {
-                            _ = sb.AppendLine().AppendLine($"*Took {run.Duration.Humanize(precision: 3, culture: System.Globalization.CultureInfo.InvariantCulture)}*").AppendLine();
+                            _ = sb.AppendLine().AppendLine($"*Took {run.Duration}*").AppendLine();
                         }
 
                         if (run.ExceptionMessage is not null)

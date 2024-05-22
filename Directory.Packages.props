@@ -27,7 +27,6 @@
   <!-- CPM packages -->
   <ItemGroup>
     <PackageVersion Include="GitHub.Actions.Glob" Version="8.0.15" />
-    <PackageVersion Include="Humanizer.Core" Version="2.14.1" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
     <PackageVersion Include="Octokit" Version="11.0.1" />
     <PackageVersion Include="HamedStack.VSTest" Version="1.0.0" />
