@@ -103,7 +103,7 @@ namespace ActionsTestResultAction
                             : run.Outcome is TestOutcome.Failed
                             ? "❌"
                             : $"❓ ({run.Outcome})";
-                        _ = sb.AppendLine($"<details><summary>{markerSymbol} {mainSuite} {run.Name}</summary>");
+                        _ = sb.AppendLine($"<details><summary>➞ {markerSymbol} {mainSuite} {run.Name}</summary>");
 
 
                         if (extraSuites.Length > 0)

@@ -241,7 +241,7 @@ namespace ActionsTestResultAction
             suiteRuns.Add(id, suiteRun);
         }
 
-        public TestResultCollection Collect(bool showDifferentFailingRuns = true, int maxRunsToShow = 5)
+        public TestResultCollection Collect(bool showDifferentFailingRuns = true, bool differenceIncludeStack = false, int maxRunsToShow = 5)
         {
             var totalTests = 0;
             var totalExecuted = 0;
@@ -348,7 +348,8 @@ namespace ActionsTestResultAction
                         var (run, extraList) = showRunsBuilder[i];
 
                         // filter according to the set
-                        if (set.TryGetValue((run.ExceptionMessage, run.ExceptionStackTrace), out var index))
+                        var t = (run.ExceptionMessage, differenceIncludeStack ? run.ExceptionStackTrace : null);
+                        if (set.TryGetValue(t, out var index))
                         {
                             // this message was already added, remove it
                             showRunsBuilder.RemoveAt(i--);
@@ -361,7 +362,7 @@ namespace ActionsTestResultAction
                         }
                         else
                         {
-                            set.Add((run.ExceptionMessage, run.ExceptionStackTrace), i);
+                            set.Add(t, i);
                         }
                     }
                 }
@@ -405,9 +406,13 @@ namespace ActionsTestResultAction
                     showRunsBuilder2.Add((run.Test, suiteRuns[run.Test.TestSuite].Name, run.ExtraSources.ToImmutableArray()));
                 }
 
+                showRunsBuilder2.Sort((a, b) => a.Suite.CompareTo(b.Suite));
+
                 // record it
                 showTestsBuilder.Add(new(showReason, test, showRunsBuilder2.DrainToImmutable(), hasHiddenNotableRuns));
             }
+
+            showTestsBuilder.Sort((a, b) => a.Test.Name.CompareTo(b.Test.Name));
 
             // create the resulting collection
             var aggregateSuite = new TestSuiteRun(default, default, "", ImmutableArray<TestRun>.Empty, overallOutcome)
