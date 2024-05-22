@@ -15,6 +15,7 @@ namespace ActionsTestResultAction
         public static readonly Uri GraphQLUri = GITHUB_GRAPHQL_URL is not null ? new Uri(GITHUB_GRAPHQL_URL) : GQLConnection.GithubApiUri;
 
         public static readonly string? GITHUB_TOKEN = GetInput(nameof(GITHUB_TOKEN)) ?? Environment.GetEnvironmentVariable(nameof(GITHUB_TOKEN));
+        public static readonly string? GITHUB_TOKEN_ACTOR = GetInput(nameof(GITHUB_TOKEN_ACTOR)) ?? Environment.GetEnvironmentVariable(nameof(GITHUB_TOKEN_ACTOR));
         public static readonly string? GITHUB_EVENT_NAME = GetInput(Inputs.EventNameVar) ?? Environment.GetEnvironmentVariable(nameof(GITHUB_EVENT_NAME));
         public static readonly string? GITHUB_EVENT_PAYLOAD = GetInput(Inputs.EventFileVar) ?? Environment.GetEnvironmentVariable(nameof(GITHUB_EVENT_PAYLOAD));
         public static readonly string? GITHUB_OUTPUT = Environment.GetEnvironmentVariable(nameof(GITHUB_OUTPUT));

@@ -35,8 +35,6 @@ namespace ActionsTestResultAction
             AggregateRun = aggregateRun;
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1305:Specify IFormatProvider",
-            Justification = "Blagh.")]
         public string Format(string? title, TestResultFormatMode mode)
         {
             var sb = new StringBuilder();
@@ -123,7 +121,7 @@ namespace ActionsTestResultAction
 
                         if (run.Duration != default)
                         {
-                            _ = sb.AppendLine().AppendLine($"*Took {run.Duration.Humanize(precision: 2)}*").AppendLine();
+                            _ = sb.AppendLine().AppendLine($"*Took {run.Duration.Humanize(precision: 3, culture: System.Globalization.CultureInfo.InvariantCulture)}*").AppendLine();
                         }
 
                         if (run.ExceptionMessage is not null)

@@ -2,7 +2,6 @@
 using System.Xml.Linq;
 using ActionsTestResultAction;
 using ActionsTestResultAction.Webhook;
-using HamedStack.VSTest;
 using Octokit;
 using Octokit.GraphQL;
 using Schemas.VisualStudio.TeamTest;
@@ -128,8 +127,6 @@ try
         logger.Debug("Hiding existing PR comments");
         try
         {
-            var selfUser = await client.User.Current().ConfigureAwait(false);
-
             // now, lets go through the existing comments on the PR to find and hide the old one
             foreach (var comment in await client.Issue.Comment.GetAllForIssue(repoId, eventPayload.PullRequest.Number).ConfigureAwait(false))
             {
@@ -139,7 +136,7 @@ try
                 */
 
                 // don't touch any other users' comments
-                if (comment.User.Id != selfUser.Id) continue;
+                if (comment.User.Login != Env.GITHUB_TOKEN_ACTOR) continue;
 
                 // don't touch any comments that don't look like ours
                 if (!comment.Body.StartsWith(MarkerString, StringComparison.Ordinal)) continue;
