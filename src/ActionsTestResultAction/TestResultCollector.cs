@@ -135,7 +135,7 @@ namespace ActionsTestResultAction
 
                         extraMessages = output
                             .Elements(TextMessages)
-                            .Select(e => (string?)e)
+                            .Select(e => ((string?)e)?.ReplaceLineEndings())
                             .Where(s => s is not null)
                             .ToImmutableArray()!;
                     }
@@ -152,10 +152,10 @@ namespace ActionsTestResultAction
                     var outcome = Enum.Parse<TestOutcome>((string?)outcomeAttr ?? nameof(TestOutcome.Inconclusive));
                     var run = new TestRun(test, id, (string?)testNameAttr ?? "", runDuration, outcome)
                     {
-                        StdOut = stdout,
-                        StdErr = stderr,
-                        ExceptionMessage = exceptionMessage,
-                        ExceptionStackTrace = exceptionStack,
+                        StdOut = stdout?.ReplaceLineEndings(),
+                        StdErr = stderr?.ReplaceLineEndings(),
+                        ExceptionMessage = exceptionMessage?.ReplaceLineEndings(),
+                        ExceptionStackTrace = exceptionStack?.ReplaceLineEndings(),
                         ExtraMessages = extraMessages
                     };
 
