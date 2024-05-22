@@ -8,7 +8,7 @@ using Schemas.VisualStudio.TeamTest;
 using Serilog;
 using Serilog.Events;
 
-const string MarkerString = "<!-- GHA-Test-Results-Comment -->\n";
+const string MarkerString = "<!-- GHA-Test-Results-Comment -->";
 
 var logger = new LoggerConfiguration()
     .MinimumLevel.Is(Env.Debug ? LogEventLevel.Verbose : LogEventLevel.Information)
@@ -135,11 +135,21 @@ try
                 if (comment.Id == newComment.Id) continue;
                 */
 
+                logger.Verbose("Inspecting comment {Id} from {Login}", comment.Id, comment.User.Login);
+
                 // don't touch any other users' comments
-                if (comment.User.Login != Env.GITHUB_TOKEN_ACTOR) continue;
+                if (comment.User.Login != Env.GITHUB_TOKEN_ACTOR)
+                {
+                    logger.Verbose("Does not match required user {User}", Env.GITHUB_TOKEN_ACTOR);
+                    continue;
+                }
 
                 // don't touch any comments that don't look like ours
-                if (!comment.Body.StartsWith(MarkerString, StringComparison.Ordinal)) continue;
+                if (!comment.Body.StartsWith(MarkerString, StringComparison.Ordinal))
+                {
+                    logger.Verbose("Does not start with marker string");
+                    continue;
+                }
 
                 // this comment looks like one of ours; hide it (or rather, add it to a list to hide. We need to hit the GraphQL API to do so.)
                 commentsToMinimize.Add(new(comment.NodeId));

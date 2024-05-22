@@ -31,7 +31,12 @@ namespace ActionsTestResultAction
         private Inputs(string eventName, Event eventPayload)
         {
             CheckName = Env.GetInput(CheckNameVar) ?? "Test Results";
-            CommentTitle = Env.GetInput(CommentTitleVar) ?? CheckName;
+            var title = Env.GetInput(CommentTitleVar);
+            if (string.IsNullOrWhiteSpace(CommentTitle))
+            {
+                title = CheckName;
+            }
+            CommentTitle = title!;
             CommentMode = Env.GetInput(CommentModeVar)?.ToUpperInvariant() switch
             {
                 "ALWAYS" => CommentMode.Always,
