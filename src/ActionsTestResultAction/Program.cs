@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Xml.Linq;
 using ActionsTestResultAction;
 using ActionsTestResultAction.Webhook;
 using HamedStack.VSTest;
@@ -16,13 +17,13 @@ var logger = new LoggerConfiguration()
     .CreateLogger();
 
 var gqlCheckMinimized = new Query()
-    .Nodes(Octokit.GraphQL.Variable.Var("Nodes"))
+    .Nodes(Octokit.GraphQL.Variable.Var("nodes"))
     .OfType<Octokit.GraphQL.Model.IssueComment>()
     .Select(c => new { c.Id, c.IsMinimized })
     .Compile();
 
 var gqlUpdateMinimized = new Mutation()
-    .MinimizeComment(Octokit.GraphQL.Variable.Var("MinimizePayload"))
+    .MinimizeComment(Octokit.GraphQL.Variable.Var("minpay"))
     .Select(p => p.MinimizedComment.IsMinimized)
     .Compile();
 
@@ -31,9 +32,8 @@ try
     var client = Env.CreateClient(new("nike4613-actions-test-results", "1.0.0"));
     var gql = Env.CreateGQLConnection(new("nike4613-actions-test-results", "1.0.0"));
 
-    var eventPayload = JsonSerializer.Deserialize(
-        await File.ReadAllTextAsync(Env.GITHUB_EVENT_PAYLOAD ?? "event.json").ConfigureAwait(false),
-        EventJsonContext.Default.Event);
+    var eventContent = await File.ReadAllTextAsync(Env.GITHUB_EVENT_PAYLOAD ?? "event.json").ConfigureAwait(false);
+    var eventPayload = JsonSerializer.Deserialize(eventContent, EventJsonContext.Default.Event);
     if (eventPayload is null)
     {
         logger.Error("Event payload is null");
@@ -67,11 +67,11 @@ try
         logger.Debug("Loading file {File}", file);
         // only support TRX for now
         var trxSrc = await File.ReadAllTextAsync(file).ConfigureAwait(false);
-        var trxModel = TestSchemaManager.ConvertToTestRun(trxSrc);
-        if (trxModel is null) continue;
+        var doc = XDocument.Parse(trxSrc);
 
         logger.Debug("Loaded model");
-        results.RecordTrxTests(file, trxModel);
+        var name = Path.GetRelativePath(Environment.CurrentDirectory, file);
+        results.RecordTrxTests(name, doc);
     }
 
     // compute the final collection
@@ -123,7 +123,7 @@ try
     if (eventPayload.PullRequest is not null)
     {
         // this is a PR, we always want to hide outdated comments
-        var commentsToMinimize = new HashSet<string>();
+        var commentsToMinimize = new List<ID>();
 
         logger.Debug("Hiding existing PR comments");
         try
@@ -145,7 +145,7 @@ try
                 if (!comment.Body.StartsWith(MarkerString, StringComparison.Ordinal)) continue;
 
                 // this comment looks like one of ours; hide it (or rather, add it to a list to hide. We need to hit the GraphQL API to do so.)
-                _ = commentsToMinimize.Add(comment.NodeId);
+                commentsToMinimize.Add(new(comment.NodeId));
             }
         }
         catch (Exception e)
@@ -159,15 +159,18 @@ try
         {
             var realToMinimize = new List<ID>();
 
-            // first, filter our updates by comments we care about that aren't already minimized
-            var checkMinimizedResult = await gql
-                .Run(gqlCheckMinimized, new Dictionary<string, object> { { "Nodes", commentsToMinimize } })
-                .ConfigureAwait(false);
-            foreach (var item in checkMinimizedResult)
+            if (commentsToMinimize.Count > 0)
             {
-                if (!item.IsMinimized)
+                // first, filter our updates by comments we care about that aren't already minimized
+                var checkMinimizedResult = await gql
+                    .Run(gqlCheckMinimized, new Dictionary<string, object> { { "nodes", commentsToMinimize } })
+                    .ConfigureAwait(false);
+                foreach (var item in checkMinimizedResult)
                 {
-                    realToMinimize.Add(item.Id);
+                    if (!item.IsMinimized)
+                    {
+                        realToMinimize.Add(item.Id);
+                    }
                 }
             }
 
@@ -180,7 +183,7 @@ try
                     .Run(gqlUpdateMinimized, new Dictionary<string, object>
                     {
                         {
-                            "MinimizePayload",
+                            "minpay",
                             new Octokit.GraphQL.Model.MinimizeCommentInput()
                             {
                                 Classifier = Octokit.GraphQL.Model.ReportedContentClassifiers.Outdated,
@@ -204,8 +207,8 @@ try
     switch (inputs.CommentMode)
     {
         case CommentMode.Failures:
-            if (collection.AggregateRun.Outcome is TestOutcome.Failed) goto case CommentMode.Errors;
-            break;
+            if (collection.AggregateRun.Outcome is TestOutcome.Failed) goto case CommentMode.Always;
+            goto case CommentMode.Errors;
 
         case CommentMode.Errors:
             if (collection.AggregateRun.Outcome is TestOutcome.Error) goto case CommentMode.Always;

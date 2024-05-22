@@ -7,13 +7,12 @@ namespace ActionsTestResultAction.Webhook
         GenerationMode = JsonSourceGenerationMode.Default,
         PreferredObjectCreationHandling = JsonObjectCreationHandling.Populate,
         UseStringEnumConverter = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.Never)]
+        DefaultIgnoreCondition = JsonIgnoreCondition.Never,
+        PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower)]
     [JsonSerializable(typeof(Event))]
-    internal partial class EventJsonContext : JsonSerializerContext
-    {
-    }
+    internal sealed partial class EventJsonContext : JsonSerializerContext;
 
-    internal class Event
+    internal sealed class Event
     {
         public PullRequest? PullRequest { get; set; }
     }

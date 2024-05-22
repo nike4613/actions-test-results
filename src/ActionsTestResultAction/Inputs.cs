@@ -32,12 +32,12 @@ namespace ActionsTestResultAction
         {
             CheckName = Env.GetInput(CheckNameVar) ?? "Test Results";
             CommentTitle = Env.GetInput(CommentTitleVar) ?? CheckName;
-            CommentMode = Env.GetInput(CommentModeVar)?.ToLowerInvariant() switch
+            CommentMode = Env.GetInput(CommentModeVar)?.ToUpperInvariant() switch
             {
-                "always" => CommentMode.Always,
-                "failures" => CommentMode.Failures,
-                "errors" => CommentMode.Errors,
-                "off" => CommentMode.Off,
+                "ALWAYS" => CommentMode.Always,
+                "FAILURES" => CommentMode.Failures,
+                "ERRORS" => CommentMode.Errors,
+                "OFF" => CommentMode.Off,
                 var x => ThrowHelper.ThrowInvalidOperationException<CommentMode>($"Invalid value for comment_mode: {x}")
             };
 

@@ -9,7 +9,6 @@
     <PublishAot>false</PublishAot>
     <PublishTrimmed>false</PublishTrimmed>
     <PublishReadyToRun>true</PublishReadyToRun>
-    <InvariantGlobalization>true</InvariantGlobalization>
 
     <VersionPrefix>0.1.0</VersionPrefix>
   </PropertyGroup>

@@ -35,6 +35,8 @@ namespace ActionsTestResultAction
             AggregateRun = aggregateRun;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1305:Specify IFormatProvider",
+            Justification = "Blagh.")]
         public string Format(string? title, TestResultFormatMode mode)
         {
             var sb = new StringBuilder();
@@ -66,27 +68,36 @@ namespace ActionsTestResultAction
 
                 foreach (var showTest in ShowTests)
                 {
-                    _ = sb.AppendLine($"<details><summary>❌ `{showTest.Test.Name}`</summary>");
+                    _ = sb.AppendLine($"""
+                        <details>
+                        <summary>❌ {showTest.Test.Name}</summary>
+
+                        """);
+
+                    _ = sb.AppendLine();
 
                     if (showTest.Test.ClassName is not null)
                     {
-                        _ = sb.AppendLine($"<sub>Class Name: `{showTest.Test.ClassName}`</sub>");
+                        _ = sb.Append($"Class Name: `{showTest.Test.ClassName}` | ");
                     }
                     if (showTest.Test.MethodName is not null)
                     {
-                        _ = sb.AppendLine($"<sub>Method Name: `{showTest.Test.MethodName}`</sub>");
+                        _ = sb.Append($"Method Name: `{showTest.Test.MethodName}` | ");
                     }
 
                     var showReason = showTest.Reason switch
                     {
                         ShowReason.None => "???",
-                        ShowReason.FailingAlways => "this test is always failing",
-                        ShowReason.FailingSometimes => "this test is sometimes failing",
-                        ShowReason.Errored => "this test errored in at least one run",
+                        ShowReason.FailingAlways => "is always failing",
+                        ShowReason.FailingSometimes => "is sometimes failing",
+                        ShowReason.Errored => "errored in at least one run",
                         var x => x.ToString(),
                     };
 
-                    _ = sb.AppendLine($"<sub>*This test is shown because {showReason}.*</sub>");
+                    _ = sb
+                        .AppendLine($"*This test {showReason}.*")
+                        .AppendLine();
+
 
                     foreach (var (run, mainSuite, extraSuites) in showTest.Runs)
                     {
@@ -95,38 +106,35 @@ namespace ActionsTestResultAction
                             : run.Outcome is TestOutcome.Failed
                             ? "❌"
                             : $"❓ ({run.Outcome})";
-                        _ = sb.AppendLine($"<details><summary>{markerSymbol} `{mainSuite}` `{run.Name}`</summary>");
+                        _ = sb.AppendLine($"<details><summary>{markerSymbol} {mainSuite} {run.Name}</summary>");
+
+
                         if (extraSuites.Length > 0)
                         {
-                            _ = sb.Append("<sub>*Also in ");
+                            _ = sb.AppendLine();
                             for (var i = 0; i < extraSuites.Length; i++)
                             {
                                 var suite = extraSuites[i];
-                                if (i > 0)
-                                {
-                                    _ = sb.Append(", ");
-                                }
-                                if (i == extraSuites.Length - 1)
-                                {
-                                    _ = sb.Append("and ");
-                                }
+                                if (i > 0) _ = sb.Append(" | ");
                                 _ = sb.Append("`" + suite + "`");
                             }
-                            _ = sb.AppendLine(".*</sub>").AppendLine();
+                            _ = sb.AppendLine().AppendLine();
                         }
 
                         if (run.Duration != default)
                         {
-                            _ = sb.AppendLine($"<sub>*Took {run.Duration.Humanize(precision: 2)}*</sub>").AppendLine();
+                            _ = sb.AppendLine().AppendLine($"*Took {run.Duration.Humanize(precision: 2)}*").AppendLine();
                         }
 
                         if (run.ExceptionMessage is not null)
                         {
                             _ = sb.AppendLine($"""
                                 Exception message:
+
                                 ```
                                 {run.ExceptionMessage}
                                 ```
+
                                 """).AppendLine();
                         }
 
@@ -134,19 +142,24 @@ namespace ActionsTestResultAction
                         {
                             _ = sb.AppendLine($"""
                                 Stack trace:
+
                                 ```
                                 {run.ExceptionStackTrace}
                                 ```
+
                                 """).AppendLine();
                         }
 
                         if (run.StdOut is not null)
                         {
                             _ = sb.AppendLine($"""
-                                <details><summary>Test Standard Output</summary>
+                                <details>
+                                <summary>Test Standard Output</summary>
+
                                 ```
                                 {run.StdOut}
                                 ```
+
                                 </details>
                                 """).AppendLine();
                         }
@@ -154,10 +167,13 @@ namespace ActionsTestResultAction
                         if (run.StdErr is not null)
                         {
                             _ = sb.AppendLine($"""
-                                <details><summary>Test Standard Error</summary>
+                                <details>
+                                <summary>Test Standard Error</summary>
+
                                 ```
                                 {run.StdErr}
                                 ```
+
                                 </details>
                                 """).AppendLine();
                         }

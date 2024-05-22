@@ -10,6 +10,8 @@ namespace ActionsTestResultAction
         public const string EndGroupProperty = "GHA-EndGroup";
         internal static readonly char[] separator = new[] { '\r', '\n' };
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1305:Specify IFormatProvider",
+            Justification = "Blagh.")]
         public void Emit(LogEvent logEvent)
         {
             if (logEvent.Properties.ContainsKey(BeginGroupProperty))

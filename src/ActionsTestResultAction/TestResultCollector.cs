@@ -1,5 +1,5 @@
 ﻿using System.Collections.Immutable;
-using System.Xml;
+using System.Xml.Linq;
 using Schemas.VisualStudio.TeamTest;
 
 namespace ActionsTestResultAction
@@ -11,35 +11,82 @@ namespace ActionsTestResultAction
 
         // TOOD: process this data somehow
 
-        public void RecordTrxTests(string trxName, TestRunType trxModel)
+        private static readonly XNamespace Trx = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010";
+        // Note: for some reason, attributes don't get the xmlns
+        private static readonly XName Id = "id";
+        private static readonly XName Name = "name";
+        private static readonly XName Storage = "storage";
+        private static readonly XName ClassName = "className";
+        private static readonly XName Outcome = "outcome";
+        private static readonly XName Total = "total";
+        private static readonly XName Executed = "executed";
+        private static readonly XName Passed = "passed";
+        private static readonly XName Failed = "failed";
+        private static readonly XName Error = "error";
+        private static readonly XName TestId = "testId";
+        private static readonly XName TestName = "testName";
+        private static readonly XName Duration = "duration";
+        private static readonly XName Start = "start";
+        private static readonly XName Finish = "finish";
+
+        private static readonly XName Counters = Trx + "Counters";
+        private static readonly XName ResultSummary = Trx + "ResultSummary";
+
+        private static readonly XName Times = Trx + "Times";
+
+        private static readonly XName TestDefinitions = Trx + "TestDefinitions";
+        private static readonly XName UnitTest = Trx + "UnitTest";
+        private static readonly XName UnitTestResult = Trx + "UnitTestResult";
+        private static readonly XName TestMethod = Trx + "TestMethod";
+        private static readonly XName Exception = Trx + "Exception";
+        private static readonly XName TextMessages = Trx + "TextMessages";
+
+        private static readonly XName Results = Trx + "Results";
+        private static readonly XName Output = Trx + "Output";
+        private static readonly XName StdOut = Trx + "StdOut";
+        private static readonly XName StdErr = Trx + "StdErr";
+        private static readonly XName ErrorInfo = Trx + "ErrorInfo";
+        private static readonly XName Message = Trx + "Message";
+        private static readonly XName StackTrace = Trx + "StackTrace";
+
+        public void RecordTrxTests(string trxName, XDocument trxModel)
         {
             var id = Guid.NewGuid();
 
+            var root = trxModel.Root;
+            if (root is null) return;
+
             TimeSpan duration = default;
-            if (trxModel.Times is [{ } times])
+            if (root.Elements(Times).FirstOrDefault() is { } times
+                && (string?)times.Attribute(Start) is { } startTimeStr
+                && (string?)times.Attribute(Finish) is { } endTimeStr)
             {
-                var startTime = DateTimeOffset.Parse(times.Start!, null);
-                var endTime = DateTimeOffset.Parse(times.Finish!, null);
+                var startTime = DateTimeOffset.Parse(startTimeStr, null);
+                var endTime = DateTimeOffset.Parse(endTimeStr, null);
                 duration = endTime - startTime;
             }
 
             // first, make sure we've created the Test instances for all of the tests defined in this TRX
-            foreach (var defSet in trxModel.TestDefinitions)
+            foreach (var defSet in root.Elements(TestDefinitions))
             {
-                foreach (var test in defSet.UnitTest)
+                foreach (var test in defSet.Elements(UnitTest))
                 {
-                    var testId = Guid.Parse(test.Id);
+                    if (test.Attribute(Id) is not { } idStr) continue;
+                    if (test.Attribute(Name) is not { } name) continue;
+
+                    var testId = (Guid)idStr;
+
                     if (!testMap.TryGetValue(testId, out _))
                     {
                         string? className = null;
                         string? methodName = null;
-                        if (test.TestMethod is { } method)
+                        if (test.Element(TestMethod) is { } method)
                         {
-                            className = method.ClassName;
-                            methodName = method.Name;
+                            className = (string?)method.Attribute(ClassName);
+                            methodName = (string?)method.Attribute(Name);
                         }
 
-                        var testObj = new Test(testId, test.Name, className, methodName);
+                        var testObj = new Test(testId, (string)name, className, methodName);
                         testMap.Add(testId, testObj);
                     }
                 }
@@ -54,12 +101,17 @@ namespace ActionsTestResultAction
 
             // now we can go through the actual results and process them
             var builder = ImmutableArray.CreateBuilder<TestRun>();
-            foreach (var resultSet in trxModel.Results)
+            foreach (var resultSet in root.Elements(Results))
             {
-                foreach (var testResult in resultSet.UnitTestResult)
+                foreach (var testResult in resultSet.Elements(UnitTestResult))
                 {
-                    var testId = Guid.Parse(testResult.TestId);
-                    var runDuration = testResult.Duration is { } dur ? TimeSpan.Parse(dur) : default;
+                    if (testResult.Attribute(TestId) is not { } testIdAttr) continue;
+                    if (testResult.Attribute(TestName) is not { } testNameAttr) continue;
+                    if (testResult.Attribute(Outcome) is not { } outcomeAttr) continue;
+                    var testId = (Guid)testIdAttr;
+
+                    var runDuration = testResult.Attribute(Duration) is { } durAttr
+                        ? TimeSpan.Parse((string)durAttr) : default;
 
                     string? exceptionMessage = null;
                     string? exceptionStack = null;
@@ -67,22 +119,23 @@ namespace ActionsTestResultAction
                     string? stderr = null;
                     var extraMessages = ImmutableArray<string>.Empty;
 
-                    if (testResult.Output is [{ } output, ..])
+                    if (testResult.Element(Output) is { } output)
                     {
-                        stdout = GetStringForObject(output.StdOut);
-                        stderr = GetStringForObject(output.StdErr);
-                        if (output.ErrorInfo is { } errorInfo)
+                        stdout = (string?)output.Element(StdOut);
+                        stderr = (string?)output.Element(StdErr);
+                        if (output.Element(ErrorInfo) is { } errorInfo)
                         {
-                            exceptionMessage = GetStringForObject(errorInfo.Message);
-                            exceptionStack = GetStringForObject(errorInfo.StackTrace);
+                            exceptionMessage = (string?)errorInfo.Element(Message);
+                            exceptionStack = (string?)errorInfo.Element(StackTrace);
                         }
-                        else if (output.Exception is { } exception)
+                        else if (output.Element(Exception) is { } exception)
                         {
-                            exceptionMessage = GetStringForObject(exception);
+                            exceptionMessage = (string?)exception;
                         }
 
-                        extraMessages = output.TextMessages
-                            .Select(GetStringForObject)
+                        extraMessages = output
+                            .Elements(TextMessages)
+                            .Select(e => (string?)e)
                             .Where(s => s is not null)
                             .ToImmutableArray()!;
                     }
@@ -91,13 +144,13 @@ namespace ActionsTestResultAction
                     if (!testMap.TryGetValue(testId, out var test))
                     {
                         // this shouldn't happen, but lets not die on it
-                        test = new(testId, testResult.TestName, null, null);
+                        test = new(testId, (string?)testNameAttr ?? "", null, null);
                         testMap.Add(testId, test);
                     }
 
                     // create the run object
-                    var outcome = Enum.Parse<TestOutcome>(testResult.Outcome ?? nameof(TestOutcome.Inconclusive));
-                    var run = new TestRun(test, id, testResult.TestName, runDuration, outcome)
+                    var outcome = Enum.Parse<TestOutcome>((string?)outcomeAttr ?? nameof(TestOutcome.Inconclusive));
+                    var run = new TestRun(test, id, (string?)testNameAttr ?? "", runDuration, outcome)
                     {
                         StdOut = stdout,
                         StdErr = stderr,
@@ -138,10 +191,13 @@ namespace ActionsTestResultAction
                             overallOutcome = TestOutcome.Aborted;
                             break;
 
-                        default:
-                        case TestOutcome.Timeout:
                         case TestOutcome.NotRunnable:
                         case TestOutcome.NotExecuted:
+                            executed--; // wasn't actually executed
+                            goto default;
+
+                        default:
+                        case TestOutcome.Timeout:
                         case TestOutcome.Disconnected:
                         case TestOutcome.Warning:
                         case TestOutcome.Pending:
@@ -158,17 +214,17 @@ namespace ActionsTestResultAction
             }
 
             // try to get summary information
-            if (trxModel.ResultSummary is [{ } summary, ..])
+            if (root.Element(ResultSummary) is { } summary)
             {
-                overallOutcome = Enum.Parse<TestOutcome>(summary.Outcome);
+                overallOutcome = Enum.Parse<TestOutcome>((string?)summary.Attribute(Outcome) ?? nameof(TestOutcome.Inconclusive));
 
-                if (summary.Counters is [{ } counter, ..])
+                if (summary.Element(Counters) is { } counter)
                 {
-                    if (counter.Total is { } ct) total = ct;
-                    if (counter.Executed is { } xt) executed = xt;
-                    if (counter.Passed is { } pt) passed = pt;
-                    if (counter.Failed is { } ft) failed = ft;
-                    if (counter.Error is { } et) errored = et;
+                    if (counter.Attribute(Total) is { } ct) total = (int)ct;
+                    if (counter.Attribute(Executed) is { } xt) executed = (int)xt;
+                    if (counter.Attribute(Passed) is { } pt) passed = (int)pt;
+                    if (counter.Attribute(Failed) is { } ft) failed = (int)ft;
+                    if (counter.Attribute(Error) is { } et) errored = (int)et;
                 }
             }
 
@@ -183,24 +239,6 @@ namespace ActionsTestResultAction
             };
 
             suiteRuns.Add(id, suiteRun);
-        }
-
-        private static string? GetStringForObject(object? obj)
-        {
-            switch (obj)
-            {
-                case null:
-                    return null;
-
-                case string s:
-                    return s;
-
-                case XmlNode node:
-                    return node.InnerText;
-
-                default:
-                    return obj.ToString();
-            }
         }
 
         public TestResultCollection Collect(bool showDifferentFailingRuns = true, int maxRunsToShow = 5)
@@ -240,6 +278,7 @@ namespace ActionsTestResultAction
 
                 var showReason = ShowReason.None;
                 var anyPassed = false;
+                var anyExecuted = false;
                 var showRunsBuilder = ImmutableArray.CreateBuilder<(TestRun Test, HashSet<string> ExtraSources)>();
                 foreach (var run in test.Runs)
                 {
@@ -247,8 +286,10 @@ namespace ActionsTestResultAction
                     {
                         case TestOutcome.Passed:
                             anyPassed = true;
+                            anyExecuted = true;
                             continue;
                         case TestOutcome.Failed:
+                            anyExecuted = true;
                             if (showReason is not ShowReason.Errored)
                             {
                                 showReason = ShowReason.FailingSometimes;
@@ -256,6 +297,7 @@ namespace ActionsTestResultAction
                             showRunsBuilder.Add((run, new()));
                             continue;
                         case TestOutcome.Error:
+                            anyExecuted = true;
                             showReason = ShowReason.Errored;
                             // insert erroring tests AT the front to make sure we show them preferentially
                             showRunsBuilder.Insert(0, (run, new()));
@@ -265,7 +307,10 @@ namespace ActionsTestResultAction
                 }
 
                 aggTests++;
-                aggExecuted++;
+                if (anyExecuted)
+                {
+                    aggExecuted++;
+                }
                 switch (showReason)
                 {
                     case ShowReason.None:
@@ -301,7 +346,6 @@ namespace ActionsTestResultAction
                     for (var i = 0; i < showRunsBuilder.Count; i++)
                     {
                         var (run, extraList) = showRunsBuilder[i];
-                        _ = extraList.Add(suiteRuns[run.TestSuite].Name);
 
                         // filter according to the set
                         if (set.TryGetValue((run.ExceptionMessage, run.ExceptionStackTrace), out var index))
@@ -328,7 +372,6 @@ namespace ActionsTestResultAction
                     for (var i = 0; i < showRunsBuilder.Count; i++)
                     {
                         var (run, extraList) = showRunsBuilder[i];
-                        _ = extraList.Add(suiteRuns[run.TestSuite].Name);
 
                         // filter according to the set
                         if (set.TryGetValue(run.Outcome, out var index))
