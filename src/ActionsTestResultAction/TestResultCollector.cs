@@ -153,20 +153,28 @@ namespace ActionsTestResultAction
 
                     var testId = (Guid)idStr;
 
+                    var collateId = GuidOfString(name);
+
                     if (!testMap.TryGetValue(testId, out _))
                     {
-                        string? className = null;
-                        string? methodName = null;
-                        if (test.Element(TestMethod) is { } method)
+                        if (testMap.TryGetValue(collateId, out var collate))
                         {
-                            className = (string?)method.Attribute(TrxClassName);
-                            methodName = (string?)method.Attribute(Name);
+                            testMap.Add(testId, collate);
                         }
+                        else
+                        {
+                            string? className = null;
+                            string? methodName = null;
+                            if (test.Element(TestMethod) is { } method)
+                            {
+                                className = (string?)method.Attribute(TrxClassName);
+                                methodName = (string?)method.Attribute(Name);
+                            }
 
-                        var collateId = GuidOfString(name);
-                        var testObj = new Test(collateId, name, className, methodName);
-                        testMap.Add(testId, testObj);
-                        testMap.Add(collateId, testObj);
+                            var testObj = new Test(collateId, name, className, methodName);
+                            _ = testMap.TryAdd(testId, testObj);
+                            _ = testMap.TryAdd(collateId, testObj);
+                        }
                     }
                 }
             }
@@ -222,12 +230,19 @@ namespace ActionsTestResultAction
                     var testCollateId = GuidOfString(testName);
 
                     // get the test reference
-                    if (!testMap.TryGetValue(testId, out var test) && !testMap.TryGetValue(testCollateId, out test))
+                    if (!testMap.TryGetValue(testId, out var test))
                     {
-                        // this shouldn't happen, but lets not die on it
-                        test = new(testCollateId, testName, null, null);
-                        testMap.Add(testCollateId, test);
-                        testMap.Add(testId, test);
+                        if (testMap.TryGetValue(testCollateId, out test))
+                        {
+                            _ = testMap.TryAdd(testId, test);
+                        }
+                        else
+                        {
+                            // this shouldn't happen, but lets not die on it
+                            test = new(testCollateId, testName, null, null);
+                            _ = testMap.TryAdd(testCollateId, test);
+                            _ = testMap.TryAdd(testId, test);
+                        }
                     }
 
                     // create the run object
