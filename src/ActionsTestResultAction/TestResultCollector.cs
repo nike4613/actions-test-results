@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Xml.Linq;
 using Schemas.VisualStudio.TeamTest;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace ActionsTestResultAction
 {
@@ -148,7 +149,7 @@ namespace ActionsTestResultAction
                 foreach (var test in defSet.Elements(UnitTest))
                 {
                     if (test.Attribute(Id) is not { } idStr) continue;
-                    if (test.Attribute(Name) is not { } name) continue;
+                    if (test.Attribute(Name) is not { Value: { } name }) continue;
 
                     var testId = (Guid)idStr;
 
@@ -162,8 +163,10 @@ namespace ActionsTestResultAction
                             methodName = (string?)method.Attribute(Name);
                         }
 
-                        var testObj = new Test(testId, (string)name, className, methodName);
+                        var collateId = GuidOfString(name);
+                        var testObj = new Test(collateId, name, className, methodName);
                         testMap.Add(testId, testObj);
+                        testMap.Add(collateId, testObj);
                     }
                 }
             }
@@ -182,7 +185,7 @@ namespace ActionsTestResultAction
                 foreach (var testResult in resultSet.Elements(UnitTestResult))
                 {
                     if (testResult.Attribute(TestId) is not { } testIdAttr) continue;
-                    if (testResult.Attribute(TestName) is not { } testNameAttr) continue;
+                    if (testResult.Attribute(TestName) is not { Value: { } testName }) continue;
                     if (testResult.Attribute(Outcome) is not { } outcomeAttr) continue;
                     var testId = (Guid)testIdAttr;
 
@@ -216,17 +219,20 @@ namespace ActionsTestResultAction
                             .ToImmutableArray()!;
                     }
 
+                    var testCollateId = GuidOfString(testName);
+
                     // get the test reference
-                    if (!testMap.TryGetValue(testId, out var test))
+                    if (!testMap.TryGetValue(testId, out var test) && !testMap.TryGetValue(testCollateId, out test))
                     {
                         // this shouldn't happen, but lets not die on it
-                        test = new(testId, (string?)testNameAttr ?? "", null, null);
+                        test = new(testCollateId, testName, null, null);
+                        testMap.Add(testCollateId, test);
                         testMap.Add(testId, test);
                     }
 
                     // create the run object
                     var outcome = Enum.Parse<TestOutcome>((string?)outcomeAttr ?? nameof(TestOutcome.Inconclusive));
-                    var run = new TestRun(test, id, (string?)testNameAttr ?? "", runDuration, outcome)
+                    var run = new TestRun(test, id, testName, runDuration, outcome)
                     {
                         StdOut = stdout?.ReplaceLineEndings(),
                         StdErr = stderr?.ReplaceLineEndings(),
