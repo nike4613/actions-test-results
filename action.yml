@@ -51,4 +51,4 @@ inputs:
   
 runs:
   using: docker
-  image: docker://ghcr.io/nike4613/actions-test-results:v1
+  image: docker://ghcr.io/nike4613/actions-test-results:v2
