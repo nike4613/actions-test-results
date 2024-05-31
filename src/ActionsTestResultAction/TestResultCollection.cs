@@ -97,6 +97,20 @@ namespace ActionsTestResultAction
                         .AppendLine($"*This test {showReason}.*")
                         .AppendLine();
 
+                    if (showTest.Suites.Length > 0)
+                    {
+                        _ = mb.AppendLine($"<details><summary>Failures present in</summary>")
+                            .AppendLine().IncreaseIndent()
+                            .AppendLine();
+
+                        foreach (var suite in showTest.Suites)
+                        {
+                            _ = mb.AppendLine($"- {suite}");
+                        }
+
+                        _ = mb.AppendLine().DecreaseIndent().AppendLine();
+                    }
+
 
                     foreach (var (run, mainSuite, extraSuites) in showTest.Runs)
                     {
@@ -109,14 +123,16 @@ namespace ActionsTestResultAction
 
                         if (extraSuites.Length > 0)
                         {
-                            _ = mb.AppendLine();
-                            for (var i = 0; i < extraSuites.Length; i++)
+                            _ = mb.AppendLine($"<details><summary>Failure present in</summary>")
+                                .AppendLine().IncreaseIndent()
+                                .AppendLine();
+
+                            foreach (var suite in extraSuites)
                             {
-                                var suite = extraSuites[i];
-                                if (i > 0) _ = mb.Append(" | ");
-                                _ = mb.Append("`" + suite + "`");
+                                _ = mb.AppendLine($"- {suite}");
                             }
-                            _ = mb.AppendLine().AppendLine();
+
+                            _ = mb.AppendLine().DecreaseIndent().AppendLine();
                         }
 
                         if (run.Duration != default)
