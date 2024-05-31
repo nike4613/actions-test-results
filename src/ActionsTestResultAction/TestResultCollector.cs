@@ -1,4 +1,8 @@
 ﻿using System.Collections.Immutable;
+using System.Data;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Xml.Linq;
 using Schemas.VisualStudio.TeamTest;
 
@@ -9,14 +13,12 @@ namespace ActionsTestResultAction
         private readonly Dictionary<Guid, Test> testMap = new();
         private readonly Dictionary<Guid, TestSuiteRun> suiteRuns = new();
 
-        // TOOD: process this data somehow
-
+        #region TRX names
         private static readonly XNamespace Trx = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010";
         // Note: for some reason, attributes don't get the xmlns
         private static readonly XName Id = "id";
         private static readonly XName Name = "name";
-        private static readonly XName Storage = "storage";
-        private static readonly XName ClassName = "className";
+        private static readonly XName TrxClassName = "className";
         private static readonly XName Outcome = "outcome";
         private static readonly XName Total = "total";
         private static readonly XName Executed = "executed";
@@ -35,6 +37,7 @@ namespace ActionsTestResultAction
         private static readonly XName Times = Trx + "Times";
 
         private static readonly XName TestDefinitions = Trx + "TestDefinitions";
+        private static readonly XName TestRun = Trx + "TestRun";
         private static readonly XName UnitTest = Trx + "UnitTest";
         private static readonly XName UnitTestResult = Trx + "UnitTestResult";
         private static readonly XName TestMethod = Trx + "TestMethod";
@@ -46,11 +49,77 @@ namespace ActionsTestResultAction
         private static readonly XName StdOut = Trx + "StdOut";
         private static readonly XName StdErr = Trx + "StdErr";
         private static readonly XName ErrorInfo = Trx + "ErrorInfo";
-        private static readonly XName Message = Trx + "Message";
-        private static readonly XName StackTrace = Trx + "StackTrace";
+        private static readonly XName TrxMessage = Trx + "Message";
+        private static readonly XName TrxStackTrace = Trx + "StackTrace";
+        #endregion
+
+        #region JUnit names
+        // Elements
+        private static readonly XName TestSuites = "testsuites";
+        private static readonly XName TestSuite = "testsuite";
+        private static readonly XName TestCase = "testcase";
+        private static readonly XName SystemOut = "system-out";
+        private static readonly XName SystemErr = "system-err";
+        private static readonly XName Failure = "failure";
+        private static readonly XName Properties = "properties";
+        private static readonly XName Property = "property";
+
+        // Attributes
+        private static readonly XName Tests = "tests";
+        private static readonly XName Failures = "failures";
+        private static readonly XName Skipped = "skipped"; // also an element
+        private static readonly XName Errors = "errors";
+        private static readonly XName Time = "time";
+        private static readonly XName Value = "value";
+        private static readonly XName JUnitMessage = "message";
+        private static readonly XName JUnitClassName = "classname";
+        #endregion
+
+        #region NUnit names
+        // NOTE: We limit our processing here to what xunit.console emits for nunit test results
+
+        // Elements
+        private static readonly XName NUnitTestResults = "test-results";
+        private static readonly XName NUnitTestSuite = "test-suite";
+
+        // Attributes
+        private static readonly XName Result = "result";
+        #endregion
+
+        public void RecordXmlTests(string xmlName, XDocument xdoc)
+        {
+            if (xdoc.Root is null) return; // empty file
+
+            // lets inspect it to try to guess what format it is
+
+            // first, lets try to find the default xmlns
+            var defaultNs = xdoc.Root.GetDefaultNamespace();
+            if (defaultNs == Trx)
+            {
+                RecordTrxTests(xmlName, xdoc);
+                return;
+            }
+
+            // next, lets look at the name of the root node
+            if (xdoc.Root.Name == TestRun)
+            {
+                // still looks like a TRX
+                RecordTrxTests(xmlName, xdoc);
+                return;
+            }
+
+            if (xdoc.Root.Name == TestSuites || xdoc.Root.Name == TestSuite)
+            {
+                // looks like a JUnit XML
+                RecordJUnitTests(xmlName, xdoc);
+                return;
+            }
+        }
 
         public void RecordTrxTests(string trxName, XDocument trxModel)
         {
+            // Trx root is TestRun, with xmlns = Trx
+
             var id = Guid.NewGuid();
 
             var root = trxModel.Root;
@@ -82,7 +151,7 @@ namespace ActionsTestResultAction
                         string? methodName = null;
                         if (test.Element(TestMethod) is { } method)
                         {
-                            className = (string?)method.Attribute(ClassName);
+                            className = (string?)method.Attribute(TrxClassName);
                             methodName = (string?)method.Attribute(Name);
                         }
 
@@ -125,8 +194,8 @@ namespace ActionsTestResultAction
                         stderr = (string?)output.Element(StdErr);
                         if (output.Element(ErrorInfo) is { } errorInfo)
                         {
-                            exceptionMessage = (string?)errorInfo.Element(Message);
-                            exceptionStack = (string?)errorInfo.Element(StackTrace);
+                            exceptionMessage = (string?)errorInfo.Element(TrxMessage);
+                            exceptionStack = (string?)errorInfo.Element(TrxStackTrace);
                         }
                         else if (output.Element(Exception) is { } exception)
                         {
@@ -236,6 +305,193 @@ namespace ActionsTestResultAction
                 Passed = passed,
                 Failed = failed,
                 Errored = errored,
+            };
+
+            suiteRuns.Add(id, suiteRun);
+        }
+
+        private unsafe static Guid GuidOfString(string str)
+        {
+            var numGuids = SHA256.HashSizeInBytes / sizeof(Guid);
+
+            Span<Guid> guids = stackalloc Guid[numGuids];
+            var guidBytes = MemoryMarshal.Cast<Guid, byte>(guids);
+
+            var result = SHA256.TryHashData(MemoryMarshal.Cast<char, byte>(str), guidBytes, out _);
+            Debug.Assert(result);
+
+            return guids[str.Length & 1];
+        }
+
+        public void RecordJUnitTests(string xmlName, XDocument model)
+        {
+            if (model.Root is null) return;
+
+            var id = Guid.NewGuid();
+
+            // note: our primary goal here is processing JUnit files generated by xunit.console
+
+            var root = model.Root;
+            var rootProps = root.Element(Properties);
+
+            var overallName = xmlName;
+            var totalTime = double.NaN;
+            var defTotal = 0;
+            var defFailures = 0;
+            var defErrors = 0;
+            var defSkipped = 0;
+            TestOutcome? outcome = null;
+
+            if (root.Attribute(Name) is { } nameAttr)
+            {
+                overallName = nameAttr.Value;
+            }
+
+            // figure out where the containing suites are
+            IEnumerable<XElement> suiteNodes;
+            if (root.Name == TestSuites)
+            {
+                suiteNodes = root.Elements(TestSuite);
+            }
+            else
+            {
+                suiteNodes = [root];
+            }
+
+            // now iterate over the suites, but more importantly, the tests within those suites
+            var builder = ImmutableArray.CreateBuilder<TestRun>();
+            foreach (var suiteNode in suiteNodes)
+            {
+                // a test suite consists of a list of test cases
+                foreach (var testCase in suiteNode.Elements(TestCase))
+                {
+                    // each test case has shockingly little information we care about
+                    if (testCase.Attribute(Name) is not { Value: var testName }) continue;
+                    var testId = GuidOfString(testName);
+
+                    var classname = (string?)testCase.Attribute(JUnitClassName);
+
+                    defTotal++;
+
+                    // get this run's data
+                    var testTime = double.NaN;
+                    var testOutcome = TestOutcome.Passed;
+
+                    if (testCase.Attribute(Time) is { } timeElem)
+                    {
+                        testTime = (double)timeElem;
+                    }
+
+                    string? stdout = null;
+                    string? stderr = null;
+
+                    string? message = null;
+                    string? stackTrace = null;
+
+                    if (testCase.Element(SystemOut) is { } systemOutElem)
+                    {
+                        stdout = systemOutElem.Value;
+                    }
+                    if (testCase.Element(SystemErr) is { } systemErrElem)
+                    {
+                        stderr = systemErrElem.Value;
+                    }
+
+                    if (testCase.Element(Failure) is { } failureElem)
+                    {
+                        testOutcome = TestOutcome.Failed;
+                        defFailures++;
+
+                        message = (string?)failureElem.Attribute(JUnitMessage);
+                        stackTrace = failureElem.Value;
+                    }
+                    else if (testCase.Element(Error) is { } errorElem)
+                    {
+                        testOutcome = TestOutcome.Error;
+                        defErrors++;
+
+                        message = (string?)errorElem.Attribute(JUnitMessage);
+                        stackTrace = errorElem.Value;
+                    }
+
+                    // get the test reference
+                    if (!testMap.TryGetValue(testId, out var test))
+                    {
+                        test = new(testId, testName, classname, null);
+                        testMap.Add(testId, test);
+                    }
+
+                    var run = new TestRun(test, id, testName, TimeSpan.FromSeconds(testTime), testOutcome)
+                    {
+                        StdOut = stdout?.ReplaceLineEndings(),
+                        StdErr = stderr?.ReplaceLineEndings(),
+                        ExceptionMessage = message?.ReplaceLineEndings(),
+                        ExceptionStackTrace = stackTrace?.ReplaceLineEndings(),
+                    };
+
+                    test.Runs.Add(run);
+                    builder.Add(run);
+                }
+            }
+
+            // extract top-level information
+            if (root.Attribute(Time) is { } timeAttr)
+            {
+                totalTime = (double)timeAttr;
+            }
+
+            if (root.Attribute(Tests) is { } testsAttr)
+            {
+                defTotal = (int)testsAttr;
+            }
+
+            if (root.Attribute(Failures) is { } failuresAttr)
+            {
+                defFailures = (int)failuresAttr;
+            }
+
+            if (root.Attribute(Errors) is { } errorsAttr)
+            {
+                defErrors = (int)errorsAttr;
+            }
+
+            if (root.Attribute(Skipped) is { } skippedAttr)
+            {
+                defSkipped = (int)skippedAttr;
+            }
+            else if (rootProps is not null)
+            {
+                // no skipped attribute, try to get properties value that xunit generates
+                skippedAttr = rootProps.Elements(Property).FirstOrDefault(p => p.Attribute(Name) is { Value: "skipped" })?.Attribute(Value);
+                if (skippedAttr is not null)
+                {
+                    defSkipped = (int)skippedAttr;
+                }
+            }
+
+            if (rootProps is not null)
+            {
+                var resultAttr = rootProps.Elements(Property).FirstOrDefault(p => p.Attribute(Name) is { Value: "result" })?.Attribute(Value);
+                if (resultAttr is not null)
+                {
+                    outcome = resultAttr.Value switch
+                    {
+                        "Success" => TestOutcome.Passed,
+                        "Failure" => TestOutcome.Failed,
+                        _ => null
+                    };
+                }
+            }
+
+            outcome ??= defErrors != 0 ? TestOutcome.Error : defFailures != 0 ? TestOutcome.Failed : TestOutcome.Passed;
+
+            var suiteRun = new TestSuiteRun(TimeSpan.FromSeconds(totalTime), id, xmlName, builder.DrainToImmutable(), outcome.GetValueOrDefault())
+            {
+                Total = defTotal,
+                Executed = defTotal - defSkipped,
+                Passed = defTotal - defSkipped - defFailures - defErrors,
+                Failed = defFailures,
+                Errored = defErrors,
             };
 
             suiteRuns.Add(id, suiteRun);
@@ -506,7 +762,7 @@ namespace ActionsTestResultAction
         public string? ExceptionMessage { get; init; }
         public string? ExceptionStackTrace { get; init; }
 
-        public ImmutableArray<string> ExtraMessages { get; init; }
+        public ImmutableArray<string> ExtraMessages { get; init; } = [];
 
         public TestRun(Test test, Guid testSuite, string name, TimeSpan duration, TestOutcome outcome)
         {

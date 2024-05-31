@@ -70,7 +70,7 @@ try
 
         logger.Debug("Loaded model");
         var name = Path.GetRelativePath(Environment.CurrentDirectory, file);
-        results.RecordTrxTests(name, doc);
+        results.RecordXmlTests(name, doc);
     }
 
     // compute the final collection
