@@ -44,7 +44,7 @@ namespace ActionsTestResultAction
         private static readonly XName Exception = Trx + "Exception";
         private static readonly XName TextMessages = Trx + "TextMessages";
 
-        private static readonly XName Results = Trx + "Results";
+        private static readonly XName TrxResults = Trx + "Results";
         private static readonly XName Output = Trx + "Output";
         private static readonly XName StdOut = Trx + "StdOut";
         private static readonly XName StdErr = Trx + "StdErr";
@@ -81,9 +81,16 @@ namespace ActionsTestResultAction
         // Elements
         private static readonly XName NUnitTestResults = "test-results";
         private static readonly XName NUnitTestSuite = "test-suite";
+        private static readonly XName NUnitResults = "results";
+        private static readonly XName NUnitTestCase = "test-case";
+        private static readonly XName NUnitMessage = JUnitMessage;
+        private static readonly XName NUnitStackTrace = "stack-trace";
+        private static readonly XName NUnitReason = "reason";
 
         // Attributes
         private static readonly XName Result = "result";
+
+        // TODO: implement processing of NUnit
         #endregion
 
         public void RecordXmlTests(string xmlName, XDocument xdoc)
@@ -170,7 +177,7 @@ namespace ActionsTestResultAction
 
             // now we can go through the actual results and process them
             var builder = ImmutableArray.CreateBuilder<TestRun>();
-            foreach (var resultSet in root.Elements(Results))
+            foreach (var resultSet in root.Elements(TrxResults))
             {
                 foreach (var testResult in resultSet.Elements(UnitTestResult))
                 {
