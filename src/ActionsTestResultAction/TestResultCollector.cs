@@ -402,6 +402,10 @@ namespace ActionsTestResultAction
                 {
                     // each test case has shockingly little information we care about
                     if (testCase.Attribute(Name) is not { Value: var testName }) continue;
+
+                    // note that XUnit->JUnit causes quotes to be backslash-escaped, we want to fix that to try to reduce false unique tests
+                    testName = testName.Replace("\\\"", "\"");
+
                     var testId = GuidOfString(testName);
 
                     var classname = (string?)testCase.Attribute(JUnitClassName);
