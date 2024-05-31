@@ -128,7 +128,7 @@ namespace ActionsTestResultAction
 
                         if (extraSuites.Length > 0)
                         {
-                            _ = mb.AppendLine($"<details><summary>Failure present in</summary>")
+                            _ = mb.AppendLine($"<details><summary>Failure also present in</summary>")
                                 .AppendLine().IncreaseIndent()
                                 .AppendLine();
 
