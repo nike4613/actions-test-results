@@ -64,7 +64,6 @@ try
     foreach (var file in inputs.Files)
     {
         logger.Debug("Loading file {File}", file);
-        // only support TRX for now
         var trxSrc = await File.ReadAllTextAsync(file).ConfigureAwait(false);
         var doc = XDocument.Parse(trxSrc);
 

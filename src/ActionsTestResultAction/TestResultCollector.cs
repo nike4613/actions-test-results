@@ -155,7 +155,7 @@ namespace ActionsTestResultAction
 
                     var collateId = GuidOfString(name);
 
-                    if (!testMap.TryGetValue(testId, out _))
+                    if (!testMap.TryGetValue(testId, out var testObj))
                     {
                         if (testMap.TryGetValue(collateId, out var collate))
                         {
@@ -171,10 +171,14 @@ namespace ActionsTestResultAction
                                 methodName = (string?)method.Attribute(Name);
                             }
 
-                            var testObj = new Test(collateId, name, className, methodName);
+                            testObj = new Test(collateId, name, className, methodName);
                             _ = testMap.TryAdd(testId, testObj);
                             _ = testMap.TryAdd(collateId, testObj);
                         }
+                    }
+                    else
+                    {
+                        _ = testMap.TryAdd(collateId, testObj);
                     }
                 }
             }
@@ -243,6 +247,10 @@ namespace ActionsTestResultAction
                             _ = testMap.TryAdd(testCollateId, test);
                             _ = testMap.TryAdd(testId, test);
                         }
+                    }
+                    else
+                    {
+                        _ = testMap.TryAdd(testCollateId, test);
                     }
 
                     // create the run object
@@ -556,7 +564,7 @@ namespace ActionsTestResultAction
             // now go through all tests, and work out which ones should be shown
             var testsBuilder = ImmutableArray.CreateBuilder<Test>();
             var showTestsBuilder = ImmutableArray.CreateBuilder<ShownTest>();
-            foreach (var test in testMap.Values)
+            foreach (var test in testMap.Values.Distinct())
             {
                 testsBuilder.Add(test);
 
@@ -639,6 +647,7 @@ namespace ActionsTestResultAction
                             showRunsBuilder.RemoveAt(i--);
 
                             var targetExtraSet = showRunsBuilder[index].ExtraSources;
+                            _ = targetExtraSet.Add(suiteRuns[run.TestSuite].Name);
                             foreach (var extra in extraList)
                             {
                                 _ = targetExtraSet.Add(extra);
@@ -665,6 +674,7 @@ namespace ActionsTestResultAction
                             showRunsBuilder.RemoveAt(i--);
 
                             var targetExtraSet = showRunsBuilder[index].ExtraSources;
+                            _ = targetExtraSet.Add(suiteRuns[run.TestSuite].Name);
                             foreach (var extra in extraList)
                             {
                                 _ = targetExtraSet.Add(extra);
