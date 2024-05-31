@@ -701,7 +701,15 @@ namespace ActionsTestResultAction
                     result += run.ExtraMessages.Length;
                     return result;
                 }
-                showRunsBuilder.Sort((a, b) => RankRunInfo(a.Test).CompareTo(RankRunInfo(b.Test)));
+
+                showRunsBuilder.Sort((a, b) =>
+                {
+                    // first by amount of information
+                    var result = RankRunInfo(a.Test).CompareTo(RankRunInfo(b.Test));
+                    if (result != 0) return result;
+                    // then by name
+                    return a.Test.Name.CompareTo(b.Test.Name);
+                });
 
                 var allSuites = new HashSet<string>();
                 foreach (var run in showRunsBuilder)
