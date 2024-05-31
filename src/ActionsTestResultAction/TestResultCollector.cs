@@ -453,6 +453,14 @@ namespace ActionsTestResultAction
                         stackTrace = errorElem.Value;
                     }
 
+                    // XUnit->JUnit also embeds newlines here (and presumably other chars)
+                    message = message
+                        ?.Replace("\\r", "\r")
+                        ?.Replace("\\n", "\n")
+                        ?.Replace("\\t", "\t")
+                        ?.Replace("\\\"", "\"")
+                        ?.Replace("\\\\", "\\");
+
                     // get the test reference
                     if (!testMap.TryGetValue(testId, out var test))
                     {
