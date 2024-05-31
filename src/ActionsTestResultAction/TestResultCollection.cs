@@ -108,7 +108,7 @@ namespace ActionsTestResultAction
                             _ = mb.AppendLine($"- {suite}");
                         }
 
-                        _ = mb.AppendLine().DecreaseIndent().AppendLine();
+                        _ = mb.AppendLine().DecreaseIndent().AppendLine("</details>");
                     }
 
 
@@ -121,6 +121,11 @@ namespace ActionsTestResultAction
                             : $"❓ ({run.Outcome})";
                         _ = mb.AppendLine($"<details><summary>{markerSymbol} {mainSuite} {run.Name}</summary>").AppendLine().IncreaseIndent();
 
+                        if (run.Duration != default)
+                        {
+                            _ = mb.AppendLine().AppendLine($"*Took {run.Duration}*").AppendLine();
+                        }
+
                         if (extraSuites.Length > 0)
                         {
                             _ = mb.AppendLine($"<details><summary>Failure present in</summary>")
@@ -132,12 +137,7 @@ namespace ActionsTestResultAction
                                 _ = mb.AppendLine($"- {suite}");
                             }
 
-                            _ = mb.AppendLine().DecreaseIndent().AppendLine();
-                        }
-
-                        if (run.Duration != default)
-                        {
-                            _ = mb.AppendLine().AppendLine($"*Took {run.Duration}*").AppendLine();
+                            _ = mb.AppendLine().DecreaseIndent().AppendLine("</details>");
                         }
 
                         if (run.ExceptionMessage is not null)
