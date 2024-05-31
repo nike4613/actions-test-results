@@ -5,7 +5,6 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Xml.Linq;
 using Schemas.VisualStudio.TeamTest;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace ActionsTestResultAction
 {
@@ -687,6 +686,29 @@ namespace ActionsTestResultAction
                     }
                 }
 
+                // sort runs by amount of information
+                static int RankRunInfo(TestRun run)
+                {
+                    var result = 0;
+                    if (run.ExceptionMessage is not null) result++;
+                    if (run.ExceptionStackTrace is not null) result++;
+                    if (run.StdOut is not null) result++;
+                    if (run.StdErr is not null) result++;
+                    result += run.ExtraMessages.Length;
+                    return result;
+                }
+                showRunsBuilder.Sort((a, b) => RankRunInfo(a.Test).CompareTo(RankRunInfo(b.Test)));
+
+                var allSuites = new HashSet<string>();
+                foreach (var run in showRunsBuilder)
+                {
+                    _ = allSuites.Add(suiteRuns[run.Test.TestSuite].Name);
+                    foreach (var extra in run.ExtraSources)
+                    {
+                        _ = allSuites.Add(extra);
+                    }
+                }
+
                 // filter to the max runs to show
                 for (var i = maxRunsToShow; i < showRunsBuilder.Count; i++)
                 {
@@ -697,13 +719,13 @@ namespace ActionsTestResultAction
                 var showRunsBuilder2 = ImmutableArray.CreateBuilder<(TestRun Run, string Suite, ImmutableArray<string> Sources)>();
                 foreach (var run in showRunsBuilder)
                 {
-                    showRunsBuilder2.Add((run.Test, suiteRuns[run.Test.TestSuite].Name, run.ExtraSources.ToImmutableArray()));
+                    showRunsBuilder2.Add((run.Test, suiteRuns[run.Test.TestSuite].Name, run.ExtraSources.ToImmutableArray().Sort()));
                 }
 
                 showRunsBuilder2.Sort((a, b) => a.Suite.CompareTo(b.Suite));
 
                 // record it
-                showTestsBuilder.Add(new(showReason, test, showRunsBuilder2.DrainToImmutable(), hasHiddenNotableRuns));
+                showTestsBuilder.Add(new(showReason, test, showRunsBuilder2.DrainToImmutable(), allSuites.ToImmutableArray().Sort(), hasHiddenNotableRuns));
             }
 
             showTestsBuilder.Sort((a, b) => a.Test.Name.CompareTo(b.Test.Name));

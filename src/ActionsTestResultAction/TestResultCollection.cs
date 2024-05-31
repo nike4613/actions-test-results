@@ -8,6 +8,7 @@ namespace ActionsTestResultAction
         ShowReason Reason,
         Test Test,
         ImmutableArray<(TestRun Run, string RunSuite, ImmutableArray<string> Suites)> Runs,
+        ImmutableArray<string> Suites,
         bool HasHiddenNotableRuns);
 
     internal sealed class TestResultCollection
@@ -37,10 +38,11 @@ namespace ActionsTestResultAction
         public string Format(string? title, TestResultFormatMode mode)
         {
             var sb = new StringBuilder();
+            var mb = new MarkdownBuilder(sb);
 
             if (!string.IsNullOrWhiteSpace(title))
             {
-                _ = sb.AppendLine($"# {title}").AppendLine();
+                _ = mb.AppendLine($"# {title}").AppendLine();
             }
 
             // first, lets emit a table containing totals
@@ -50,7 +52,7 @@ namespace ActionsTestResultAction
             var errorTableUniqExt = hasErrors ? $"{AggregateRun.Errored} |" : "";
             var errorTableTotalExt = hasErrors ? $"{Errored} |" : "";
 
-            _ = sb.AppendLine($"""
+            _ = mb.AppendLine($"""
 
             | | Total | Skipped | Passed | Failed |{errorTableHdrExt2}
             | ---: | ---: | ---: | ---: | ---: |{errorTableHdrExt1}
@@ -61,25 +63,25 @@ namespace ActionsTestResultAction
 
             if (mode is not TestResultFormatMode.Summary)
             {
-                _ = sb.AppendLine($"### Failing{(hasErrors ? " or Erroring" : "")} runs").AppendLine();
+                _ = mb.AppendLine($"### Failing{(hasErrors ? " or Erroring" : "")} runs").AppendLine();
 
                 foreach (var showTest in ShowTests)
                 {
-                    _ = sb.AppendLine($"""
+                    _ = mb.AppendLine($"""
                         <details>
                         <summary>❌ {showTest.Test.Name}</summary>
 
-                        """);
+                        """).IncreaseIndent();
 
-                    _ = sb.AppendLine();
+                    _ = mb.AppendLine();
 
                     if (showTest.Test.ClassName is not null)
                     {
-                        _ = sb.Append($"Class Name: `{showTest.Test.ClassName}` | ");
+                        _ = mb.Append($"Class Name: `{showTest.Test.ClassName}` | ");
                     }
                     if (showTest.Test.MethodName is not null)
                     {
-                        _ = sb.Append($"Method Name: `{showTest.Test.MethodName}` | ");
+                        _ = mb.Append($"Method Name: `{showTest.Test.MethodName}` | ");
                     }
 
                     var showReason = showTest.Reason switch
@@ -91,7 +93,7 @@ namespace ActionsTestResultAction
                         var x => x.ToString(),
                     };
 
-                    _ = sb
+                    _ = mb
                         .AppendLine($"*This test {showReason}.*")
                         .AppendLine();
 
@@ -103,29 +105,28 @@ namespace ActionsTestResultAction
                             : run.Outcome is TestOutcome.Failed
                             ? "❌"
                             : $"❓ ({run.Outcome})";
-                        _ = sb.AppendLine($"<details><summary>➞ {markerSymbol} {mainSuite} {run.Name}</summary>");
-
+                        _ = mb.AppendLine($"<details><summary>{markerSymbol} {mainSuite} {run.Name}</summary>").AppendLine().IncreaseIndent();
 
                         if (extraSuites.Length > 0)
                         {
-                            _ = sb.AppendLine();
+                            _ = mb.AppendLine();
                             for (var i = 0; i < extraSuites.Length; i++)
                             {
                                 var suite = extraSuites[i];
-                                if (i > 0) _ = sb.Append(" | ");
-                                _ = sb.Append("`" + suite + "`");
+                                if (i > 0) _ = mb.Append(" | ");
+                                _ = mb.Append("`" + suite + "`");
                             }
-                            _ = sb.AppendLine().AppendLine();
+                            _ = mb.AppendLine().AppendLine();
                         }
 
                         if (run.Duration != default)
                         {
-                            _ = sb.AppendLine().AppendLine($"*Took {run.Duration}*").AppendLine();
+                            _ = mb.AppendLine().AppendLine($"*Took {run.Duration}*").AppendLine();
                         }
 
                         if (run.ExceptionMessage is not null)
                         {
-                            _ = sb.AppendLine($"""
+                            _ = mb.AppendLine($"""
                                 Exception message:
 
                                 ```
@@ -137,7 +138,7 @@ namespace ActionsTestResultAction
 
                         if (run.ExceptionStackTrace is not null)
                         {
-                            _ = sb.AppendLine($"""
+                            _ = mb.AppendLine($"""
                                 Stack trace:
 
                                 ```
@@ -149,36 +150,46 @@ namespace ActionsTestResultAction
 
                         if (run.StdOut is not null)
                         {
-                            _ = sb.AppendLine($"""
+                            _ = mb.AppendLine($"""
                                 <details>
                                 <summary>Test Standard Output</summary>
 
+                                """)
+                                .IncreaseIndent()
+                                .AppendLine($"""
                                 ```
                                 {run.StdOut}
                                 ```
 
-                                </details>
-                                """).AppendLine();
+                                """)
+                                .DecreaseIndent()
+                                .AppendLine("</details>")
+                                .AppendLine();
                         }
 
                         if (run.StdErr is not null)
                         {
-                            _ = sb.AppendLine($"""
+                            _ = mb.AppendLine($"""
                                 <details>
                                 <summary>Test Standard Error</summary>
 
+                                """)
+                                .IncreaseIndent()
+                                .AppendLine($"""
                                 ```
                                 {run.StdErr}
                                 ```
 
-                                </details>
-                                """).AppendLine();
+                                """)
+                                .DecreaseIndent()
+                                .AppendLine("</details>")
+                                .AppendLine();
                         }
 
-                        _ = sb.AppendLine("</details>");
+                        _ = mb.DecreaseIndent().AppendLine("</details>");
                     }
 
-                    _ = sb.AppendLine("</details>");
+                    _ = mb.DecreaseIndent().AppendLine("</details>");
                 }
             }
 
