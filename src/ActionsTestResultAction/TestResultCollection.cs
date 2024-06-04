@@ -35,7 +35,7 @@ namespace ActionsTestResultAction
             AggregateRun = aggregateRun;
         }
 
-        public string Format(string? title, TestResultFormatMode mode)
+        public string Format(string? title, TestResultFormatMode mode, int listMaxSuites = 7)
         {
             var sb = new StringBuilder();
             var mb = new MarkdownBuilder(sb);
@@ -67,6 +67,12 @@ namespace ActionsTestResultAction
 
                 foreach (var showTest in ShowTests)
                 {
+                    if (sb.Length > 65536 - 1024)
+                    {
+                        _ = mb.AppendLine("*Remaining tests skipped, because comment is too long.*");
+                        break;
+                    }
+
                     _ = mb.AppendLine($"""
                         <details>
                         <summary>❌ {showTest.Test.Name}</summary>
@@ -103,9 +109,15 @@ namespace ActionsTestResultAction
                             .AppendLine().IncreaseIndent()
                             .AppendLine();
 
-                        foreach (var suite in showTest.Suites)
+                        var i = 0;
+                        for (; i < showTest.Suites.Length && i < listMaxSuites; i++)
                         {
-                            _ = mb.AppendLine($"- {suite}");
+                            _ = mb.AppendLine($"- {showTest.Suites[i]}");
+                        }
+
+                        if (i < showTest.Suites.Length)
+                        {
+                            _ = mb.AppendLine($"*and {showTest.Suites.Length - i} more");
                         }
 
                         _ = mb.AppendLine().DecreaseIndent().AppendLine("</details>");
@@ -114,6 +126,12 @@ namespace ActionsTestResultAction
 
                     foreach (var (run, mainSuite, extraSuites) in showTest.Runs)
                     {
+                        if (sb.Length > 65536 - 1024)
+                        {
+                            _ = mb.AppendLine("*Remaining runs skipped, because comment is too long.*");
+                            break;
+                        }
+
                         var markerSymbol = run.Outcome is TestOutcome.Error
                             ? "❗"
                             : run.Outcome is TestOutcome.Failed
@@ -132,9 +150,15 @@ namespace ActionsTestResultAction
                                 .AppendLine().IncreaseIndent()
                                 .AppendLine();
 
-                            foreach (var suite in extraSuites)
+                            var i = 0;
+                            for (; i < extraSuites.Length && i < listMaxSuites; i++)
                             {
-                                _ = mb.AppendLine($"- {suite}");
+                                _ = mb.AppendLine($"- {extraSuites[i]}");
+                            }
+
+                            if (i < extraSuites.Length)
+                            {
+                                _ = mb.AppendLine($"*and {extraSuites.Length - i} more");
                             }
 
                             _ = mb.AppendLine().DecreaseIndent().AppendLine("</details>");
