@@ -69,7 +69,7 @@ namespace ActionsTestResultAction
                 {
                     if (sb.Length > 65536 - 1024)
                     {
-                        _ = mb.AppendLine("*Remaining tests skipped, because comment is too long.*");
+                        _ = mb.AppendLine().AppendLine("*Remaining tests skipped, because comment is too long.*");
                         break;
                     }
 
@@ -128,7 +128,7 @@ namespace ActionsTestResultAction
                     {
                         if (sb.Length > 65536 - 1024)
                         {
-                            _ = mb.AppendLine("*Remaining runs skipped, because comment is too long.*");
+                            _ = mb.AppendLine().AppendLine("*Remaining runs skipped, because comment is too long.*");
                             break;
                         }
 
