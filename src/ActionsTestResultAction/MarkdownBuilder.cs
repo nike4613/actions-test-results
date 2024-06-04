@@ -16,6 +16,9 @@ namespace ActionsTestResultAction
         private int indentLevel;
         private bool didWriteIndent;
 
+        private int lastRevertPos;
+        private Stack<int>? previousRevertPos;
+
         public MarkdownBuilder IncreaseIndent()
         {
             indentLevel++;
@@ -26,6 +29,39 @@ namespace ActionsTestResultAction
         {
             indentLevel--;
             return this;
+        }
+
+        public MarkdownBuilder BeginSection()
+        {
+            if (lastRevertPos is not 0)
+            {
+                var stack = previousRevertPos ??= new();
+                stack.Push(lastRevertPos);
+            }
+
+            lastRevertPos = sb.Length;
+            return this;
+        }
+
+        public MarkdownBuilder CommitSection()
+        {
+            if (previousRevertPos is { } stack)
+            {
+                lastRevertPos = stack.Pop();
+            }
+            else
+            {
+                lastRevertPos = 0;
+            }
+
+            return this;
+        }
+
+        public MarkdownBuilder DiscardSection()
+        {
+            var sectionStart = lastRevertPos;
+            _ = sb.Remove(sectionStart, sb.Length - sectionStart);
+            return CommitSection(); // just reverts the revert pos info
         }
 
         private void WriteIndentIfNeeded()

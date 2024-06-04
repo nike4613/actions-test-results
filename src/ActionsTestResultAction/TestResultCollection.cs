@@ -65,15 +65,12 @@ namespace ActionsTestResultAction
             {
                 _ = mb.AppendLine($"### Failing{(hasErrors ? " or Erroring" : "")} runs").AppendLine();
 
+                var didDiscard = false;
                 foreach (var showTest in ShowTests)
                 {
-                    if (sb.Length > 65536 - (8 * 1024))
-                    {
-                        _ = mb.AppendLine().AppendLine("*Remaining tests skipped, because comment is too long.*");
-                        break;
-                    }
-
-                    _ = mb.AppendLine($"""
+                    _ = mb
+                        .BeginSection()
+                        .AppendLine($"""
                         <details>
                         <summary>❌ {showTest.Test.Name}</summary>
 
@@ -123,21 +120,17 @@ namespace ActionsTestResultAction
                         _ = mb.AppendLine().DecreaseIndent().AppendLine("</details>");
                     }
 
-
+                    var didDiscardRuns = false;
                     foreach (var (run, mainSuite, extraSuites) in showTest.Runs)
                     {
-                        if (sb.Length > 65536 - (6 * 1024))
-                        {
-                            _ = mb.AppendLine().AppendLine("*Remaining runs skipped, because comment is too long.*");
-                            break;
-                        }
-
                         var markerSymbol = run.Outcome is TestOutcome.Error
                             ? "❗"
                             : run.Outcome is TestOutcome.Failed
                             ? "❌"
                             : $"❓ ({run.Outcome})";
-                        _ = mb.AppendLine($"<details><summary>{markerSymbol} {mainSuite} {run.Name}</summary>").AppendLine().IncreaseIndent();
+                        _ = mb
+                            .BeginSection()
+                            .AppendLine($"<details><summary>{markerSymbol} {mainSuite} {run.Name}</summary>").AppendLine().IncreaseIndent();
 
                         if (run.Duration != default)
                         {
@@ -227,9 +220,39 @@ namespace ActionsTestResultAction
                         }
 
                         _ = mb.DecreaseIndent().AppendLine("</details>");
+
+                        if (sb.Length > 65536 - 512) // include some buffer for the messages below
+                        {
+                            _ = mb.DiscardSection();
+                            didDiscardRuns = true;
+                        }
+                        else
+                        {
+                            _ = mb.CommitSection();
+                        }
+                    }
+
+                    if (didDiscardRuns)
+                    {
+                        _ = mb.AppendLine().AppendLine("*Some runs are not shown because of message size.*");
                     }
 
                     _ = mb.DecreaseIndent().AppendLine("</details>");
+
+                    if (sb.Length > 65536 - 128) // include some buffer for hte message below
+                    {
+                        _ = mb.DiscardSection();
+                        didDiscard = true;
+                    }
+                    else
+                    {
+                        _ = mb.CommitSection();
+                    }
+                }
+
+                if (didDiscard)
+                {
+                    _ = mb.AppendLine().AppendLine("*Some tests are not shown because of message size.*");
                 }
             }
 
