@@ -67,7 +67,7 @@ namespace ActionsTestResultAction
 
                 foreach (var showTest in ShowTests)
                 {
-                    if (sb.Length > 65536 - 1024)
+                    if (sb.Length > 65536 - (8 * 1024))
                     {
                         _ = mb.AppendLine().AppendLine("*Remaining tests skipped, because comment is too long.*");
                         break;
@@ -126,7 +126,7 @@ namespace ActionsTestResultAction
 
                     foreach (var (run, mainSuite, extraSuites) in showTest.Runs)
                     {
-                        if (sb.Length > 65536 - 1024)
+                        if (sb.Length > 65536 - (6 * 1024))
                         {
                             _ = mb.AppendLine().AppendLine("*Remaining runs skipped, because comment is too long.*");
                             break;
