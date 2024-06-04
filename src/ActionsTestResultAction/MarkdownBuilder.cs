@@ -45,7 +45,7 @@ namespace ActionsTestResultAction
 
         public MarkdownBuilder CommitSection()
         {
-            if (previousRevertPos is { } stack)
+            if (previousRevertPos is { Count: > 0 } stack)
             {
                 lastRevertPos = stack.Pop();
             }
