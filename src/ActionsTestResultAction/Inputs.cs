@@ -14,12 +14,14 @@ namespace ActionsTestResultAction
         public const string FailOnVar = "FAIL_ON";
         public const string FilesVar = "FILES";
         public const string CommentOnCommitVar = "COMMENT_ON_COMMIT";
+        public const string GistTokenVar = "GIST_TOKEN";
 
         public const string EventFileVar = "EVENT_FILE";
         public const string EventNameVar = "EVENT_NAME";
 
         public string CheckName { get; }
         public string CommentTitle { get; }
+        public string? GistToken { get; }
         public CommentMode CommentMode { get; }
         public ImmutableArray<string> Files { get; }
         public bool CommentOnCommit { get; }
@@ -37,6 +39,7 @@ namespace ActionsTestResultAction
                 title = CheckName;
             }
             CommentTitle = title!;
+            GistToken = Env.GetInput(GistTokenVar);
             CommentMode = Env.GetInput(CommentModeVar)?.ToUpperInvariant() switch
             {
                 "ALWAYS" => CommentMode.Always,

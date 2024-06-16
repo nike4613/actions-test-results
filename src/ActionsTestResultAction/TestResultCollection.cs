@@ -35,7 +35,7 @@ namespace ActionsTestResultAction
             AggregateRun = aggregateRun;
         }
 
-        public string Format(string? title, TestResultFormatMode mode, int listMaxSuites = 7)
+        public string Format(string? title, TestResultFormatMode mode, int maxLen, out bool didTruncate, int listMaxSuites = 7)
         {
             var sb = new StringBuilder();
             var mb = new MarkdownBuilder(sb);
@@ -60,6 +60,8 @@ namespace ActionsTestResultAction
             | Total | {Total} | {Skipped} | {Passed} | {Failed} |{errorTableTotalExt}
 
             """);
+
+            didTruncate = false;
 
             if (mode is not TestResultFormatMode.Summary)
             {
@@ -221,10 +223,11 @@ namespace ActionsTestResultAction
 
                         _ = mb.DecreaseIndent().AppendLine("</details>");
 
-                        if (sb.Length > 65536 - 512) // include some buffer for the messages below
+                        if (sb.Length > maxLen - 512) // include some buffer for the messages below
                         {
                             _ = mb.DiscardSection();
                             didDiscardRuns = true;
+                            didTruncate = true;
                         }
                         else
                         {
@@ -239,10 +242,11 @@ namespace ActionsTestResultAction
 
                     _ = mb.DecreaseIndent().AppendLine("</details>");
 
-                    if (sb.Length > 65536 - 128) // include some buffer for hte message below
+                    if (sb.Length > maxLen - 128) // include some buffer for hte message below
                     {
                         _ = mb.DiscardSection();
                         didDiscard = true;
+                        didTruncate = true;
                     }
                     else
                     {

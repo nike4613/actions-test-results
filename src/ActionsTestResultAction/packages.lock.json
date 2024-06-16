@@ -16,12 +16,12 @@
       },
       "GitHub.Actions.Glob": {
         "type": "Direct",
-        "requested": "[8.0.15, )",
-        "resolved": "8.0.15",
-        "contentHash": "sdcgVlSsr6yFfDATYQ7ZMTEI3X19voUlDdadrGFW0BqHDvv8FSCgYughDem3CHNlrLrRedxAvtA4HFm/CP+mtg==",
+        "requested": "[8.0.16, )",
+        "resolved": "8.0.16",
+        "contentHash": "0JYCRemoWI7LUmxjmNGkTFofXqmpa0oDnQ+Q+IPTPj4mPFs2pDI8lxWDZUOmr05lTdrXpnUpb212cfBydAXHhw==",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.1",
-          "Pathological.Globbing": "8.0.1"
+          "Pathological.Globbing": "8.0.2"
         }
       },
       "HamedStack.VSTest": {
@@ -54,9 +54,9 @@
       },
       "Octokit": {
         "type": "Direct",
-        "requested": "[11.0.1, )",
-        "resolved": "11.0.1",
-        "contentHash": "fpwF/DxMJyGS+pIXDKQozx0wCIpOfG8VDr10ls+m9Gn9Lz8GslhhApxkKD9JCNO60HRUeMJsedsAS24gCjTD7Q=="
+        "requested": "[12.0.0, )",
+        "resolved": "12.0.0",
+        "contentHash": "7LAFFcirR/IaC84Uy+L1L+yqlYHxaMjHPt5GeLkB/GG0ujl7IgWWcL3VHMwMB3Y76Spsz0lMnPKub4EeosSljg=="
       },
       "Octokit.GraphQL": {
         "type": "Direct",
@@ -75,9 +75,9 @@
       },
       "Serilog": {
         "type": "Direct",
-        "requested": "[3.1.1, )",
-        "resolved": "3.1.1",
-        "contentHash": "P6G4/4Kt9bT635bhuwdXlJ2SCqqn2nhh4gqFqQueCOr9bK/e7W9ll/IoX1Ter948cV2Z/5+5v8pAfJYUISY03A=="
+        "requested": "[4.0.0, )",
+        "resolved": "4.0.0",
+        "contentHash": "2jDkUrSh5EofOp7Lx5Zgy0EB+7hXjjxE2ktTb1WVQmU00lDACR2TdROGKU0K1pDTBSJBN1PqgYpgOZF8mL7NJw=="
       },
       "SerilogAnalyzer": {
         "type": "Direct",
@@ -112,8 +112,8 @@
       },
       "Pathological.Globbing": {
         "type": "Transitive",
-        "resolved": "8.0.1",
-        "contentHash": "3V+fTSbczBh4KJE8WlWxEvYyP5Hzb1Ns/sjz2NPkb7sCBOVVl1wCYWOoeUpLWrHV7eppgHt+4rILPlDMPCdvOA==",
+        "resolved": "8.0.2",
+        "contentHash": "7qyduWvdtrbmNV8m/dnwS6A06ZmbeziCEL01My36JYfu0Q83Dg3pzW62l7GyTMI4JmAxw5pcuUrljp8rmeP0LA==",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0",
           "Microsoft.Extensions.FileSystemGlobbing": "8.0.0"

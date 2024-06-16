@@ -39,14 +39,24 @@ namespace ActionsTestResultAction
                 => Task.FromResult(GITHUB_TOKEN is not null ? new Credentials(GITHUB_TOKEN) : Credentials.Anonymous);
         }
 
+        private sealed class TokenCredentialStore(string token) : ICredentialStore
+        {
+            public Task<Credentials> GetCredentials()
+                => Task.FromResult(new Credentials(token));
+        }
+
         public static Connection CreateConnection(ProductHeaderValue product)
             => new(product, ApiUri, CredentialStore.Instance);
+        public static Connection CreateConnection(ProductHeaderValue product, string token)
+            => new(product, ApiUri, new TokenCredentialStore(token));
 
         public static GQLConnection CreateGQLConnection(GQLProductHeaderValue product)
             => new(product, GraphQLUri, GITHUB_TOKEN);
 
         public static GitHubClient CreateClient(ProductHeaderValue product)
             => new(CreateConnection(product));
+        public static GitHubClient CreateClient(ProductHeaderValue product, string token)
+            => new(CreateConnection(product, token));
 
         public static string? GetInput(string name) => Environment.GetEnvironmentVariable("INPUT_" + name.ToUpperInvariant());
 
