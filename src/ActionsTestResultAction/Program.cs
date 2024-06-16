@@ -55,6 +55,7 @@ try
 
     var results = new TestResultCollector();
 
+    logger.Information("Loading {Count} test result files", inputs.Files.Length);
     foreach (var file in inputs.Files)
     {
         logger.Debug("Loading file {File}", file);
@@ -65,6 +66,7 @@ try
         var name = Path.GetRelativePath(Environment.CurrentDirectory, file);
         results.RecordXmlTests(name, doc);
     }
+    logger.Information("Test results loaded");
 
     // compute the final collection
     var collection = results.Collect();
@@ -119,10 +121,13 @@ async Task<string> RenderToGistIfNeeded(string body, bool didTrunc, Inputs input
 
     if (gistLink is null)
     {
+        logger.Information("Creating gist for test results");
+
         if (inputs.GistToken is null)
         {
             // cannot create gist
             gistLink = "";
+            logger.Information("No gist token was provided, cannot create gist");
             return body;
         }
 
@@ -140,6 +145,8 @@ async Task<string> RenderToGistIfNeeded(string body, bool didTrunc, Inputs input
                     ["results.md"] = gistBody
                 }
             }).ConfigureAwait(false);
+
+            logger.Information("Gist created at {Url}", gist.HtmlUrl);
 
             gistLink = gist.HtmlUrl;
         }
@@ -168,10 +175,11 @@ async Task CreateCheck(Logger logger, GitHubClient client, long repoId, Inputs i
 {
     try
     {
-        logger.Debug("Adding check");
+        logger.Information("Adding check");
 
         var body = collection.Format(null, TestResultFormatMode.Comment, maxLen: 65535 - 128, out var didTrunc);
         body = await RenderToGistIfNeeded(body, didTrunc, inputs, collection).ConfigureAwait(false);
+        if (didTrunc) logger.Information("Check body was truncated");
 
         var checkOutput = new NewCheckRunOutput(inputs.CheckName, body)
         {
@@ -201,6 +209,8 @@ async Task CreateCheck(Logger logger, GitHubClient client, long repoId, Inputs i
             Output = checkOutput,
             Status = new(CheckStatus.Completed),
         }).ConfigureAwait(false);
+
+        logger.Information("Check created");
     }
     catch (Exception e)
     {
@@ -224,7 +234,7 @@ async Task MinimizePRComments(Logger logger, GitHubClient client, GQLConnection 
     // this is a PR, we always want to hide outdated comments
     var commentsToMinimize = new List<ID>();
 
-    logger.Debug("Hiding existing PR comments");
+    logger.Information("Hiding existing PR comments");
     try
     {
         // now, lets go through the existing comments on the PR to find and hide the old one
@@ -260,7 +270,7 @@ async Task MinimizePRComments(Logger logger, GitHubClient client, GQLConnection 
         logger.Error(e, "Could not get comments on PR #{PRNumber}", pr.Number);
     }
 
-    logger.Debug("Found {NumComments} comments to minimize", commentsToMinimize.Count);
+    logger.Information("Found {NumComments} comments to minimize", commentsToMinimize.Count);
 
     try
     {
@@ -304,6 +314,8 @@ async Task MinimizePRComments(Logger logger, GitHubClient client, GQLConnection 
                 logger.Warning("Could not minimize comment with node ID {ID}", id.Value);
             }
         }
+
+        logger.Information("PR comments hidden");
     }
     catch (Exception e)
     {
@@ -313,18 +325,22 @@ async Task MinimizePRComments(Logger logger, GitHubClient client, GQLConnection 
 
 async Task Comment(Logger logger, GitHubClient client, Event eventPayload, long repoId, Inputs inputs, TestResultCollection collection)
 {
+    logger.Information("Creating comment for test results");
+
     // render out the comment body
     var body = collection.Format(inputs.CommentTitle, TestResultFormatMode.Comment, maxLen: 65535 - 128, out var didTrunc);
     body = await RenderToGistIfNeeded(body, didTrunc, inputs, collection).ConfigureAwait(false);
+    if (didTrunc) logger.Information("Comment body was truncated");
 
     if (inputs.CommentOnCommit && eventPayload.PullRequest is null)
     {
-        logger.Debug("Adding comment on commit");
+        logger.Information("Adding comment on commit {CommitSha}", inputs.CommitSha);
 
         // user wants us to comment on commit, and this isn't part of a PR
         try
         {
             _ = await client.Repository.Comment.Create(repoId, inputs.CommitSha, new(body)).ConfigureAwait(false);
+            logger.Information("Commit comment created created");
         }
         catch (Exception e)
         {
@@ -333,14 +349,14 @@ async Task Comment(Logger logger, GitHubClient client, Event eventPayload, long 
     }
     else if (eventPayload.PullRequest is not null)
     {
-        logger.Debug("Adding comment on pull request {PRNumber}", eventPayload.PullRequest.Number);
+        logger.Information("Adding comment on pull request {PRNumber}", eventPayload.PullRequest.Number);
 
         try
         {
             var prCommentBody = MarkerString + "\n" + body;
 
-            // first, lets create the comment
-            var newComment = await client.Issue.Comment.Create(repoId, eventPayload.PullRequest.Number, prCommentBody).ConfigureAwait(false);
+            _ = await client.Issue.Comment.Create(repoId, eventPayload.PullRequest.Number, prCommentBody).ConfigureAwait(false);
+            logger.Information("PR comment created");
         }
         catch (Exception e)
         {
