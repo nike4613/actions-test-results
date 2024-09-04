@@ -116,7 +116,7 @@ namespace ActionsTestResultAction
 
                         if (i < showTest.Suites.Length)
                         {
-                            _ = mb.AppendLine($"*and {showTest.Suites.Length - i} more");
+                            _ = mb.AppendLine($"*and {showTest.Suites.Length - i} more*");
                         }
 
                         _ = mb.AppendLine().DecreaseIndent().AppendLine("</details>");
