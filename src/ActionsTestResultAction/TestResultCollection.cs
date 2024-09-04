@@ -35,10 +35,11 @@ namespace ActionsTestResultAction
             AggregateRun = aggregateRun;
         }
 
-        public string Format(string? title, TestResultFormatMode mode, int maxLen, out bool didTruncate, int listMaxSuites = 7)
+        public string Format(string? title, TestResultFormatMode mode, int maxLen, bool skipLongOutput, out bool didTruncate, out Dictionary<string, string> extraOutput, int listMaxSuites = 7)
         {
             var sb = new StringBuilder();
             var mb = new MarkdownBuilder(sb);
+            extraOutput = new();
 
             if (!string.IsNullOrWhiteSpace(title))
             {
@@ -51,6 +52,8 @@ namespace ActionsTestResultAction
             var errorTableHdrExt2 = hasErrors ? " Errored |" : "";
             var errorTableUniqExt = hasErrors ? $"{AggregateRun.Errored} |" : "";
             var errorTableTotalExt = hasErrors ? $"{Errored} |" : "";
+
+            var testId = 0;
 
             _ = mb.AppendLine($"""
 
@@ -183,42 +186,48 @@ namespace ActionsTestResultAction
                                 """).AppendLine();
                         }
 
+                        static void AppendOutput(MarkdownBuilder mb, bool skipLong, Dictionary<string, string> extraOutput, string outputName, string displayName, string text)
+                        {
+                            if (text.Length > 1024)
+                            {
+                                if (skipLong)
+                                {
+                                    return;
+                                }
+                                else
+                                {
+                                    extraOutput[outputName] = text;
+                                    _ = mb.AppendLine($"[{displayName}]({outputName})").AppendLine();
+                                }
+                            }
+                            else
+                            {
+                                _ = mb.AppendLine($"""
+                                    <details>
+                                    <summary>{displayName}</summary>
+
+                                    """)
+                                    .IncreaseIndent()
+                                    .AppendLine($"""
+                                    ```
+                                    {text}
+                                    ```
+
+                                    """)
+                                    .DecreaseIndent()
+                                    .AppendLine("</details>")
+                                    .AppendLine();
+                            }
+                        }
+
                         if (run.StdOut is not null)
                         {
-                            _ = mb.AppendLine($"""
-                                <details>
-                                <summary>Test Standard Output</summary>
-
-                                """)
-                                .IncreaseIndent()
-                                .AppendLine($"""
-                                ```
-                                {run.StdOut}
-                                ```
-
-                                """)
-                                .DecreaseIndent()
-                                .AppendLine("</details>")
-                                .AppendLine();
+                            AppendOutput(mb, skipLongOutput, extraOutput, $"stdout{testId}.txt", "Test Standard Output", run.StdOut);
                         }
 
                         if (run.StdErr is not null)
                         {
-                            _ = mb.AppendLine($"""
-                                <details>
-                                <summary>Test Standard Error</summary>
-
-                                """)
-                                .IncreaseIndent()
-                                .AppendLine($"""
-                                ```
-                                {run.StdErr}
-                                ```
-
-                                """)
-                                .DecreaseIndent()
-                                .AppendLine("</details>")
-                                .AppendLine();
+                            AppendOutput(mb, skipLongOutput, extraOutput, $"stderr{testId}.txt", "Test Standard Error", run.StdErr);
                         }
 
                         _ = mb.DecreaseIndent().AppendLine("</details>");
@@ -233,6 +242,8 @@ namespace ActionsTestResultAction
                         {
                             _ = mb.CommitSection();
                         }
+
+                        testId++;
                     }
 
                     if (didDiscardRuns)

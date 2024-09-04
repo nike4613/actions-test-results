@@ -135,16 +135,22 @@ async Task<string> RenderToGistIfNeeded(string body, bool didTrunc, Inputs input
         {
             var gistClient = Env.CreateClient(okPHV, inputs.GistToken);
 
-            var gistBody = collection.Format(null, TestResultFormatMode.Comment, maxLen: int.MaxValue, out _);
+            var gistBody = collection.Format(null, TestResultFormatMode.Comment, maxLen: int.MaxValue, skipLongOutput: false, out _, out var extraOutput, listMaxSuites: int.MaxValue);
 
-            var gist = await gistClient.Gist.Create(new()
+            var gistData = new NewGist()
             {
                 Public = false,
                 Files =
                 {
                     ["results.md"] = gistBody
                 }
-            }).ConfigureAwait(false);
+            };
+            foreach (var kvp in extraOutput)
+            {
+                gistData.Files.Add(kvp.Key, kvp.Value);
+            }
+
+            var gist = await gistClient.Gist.Create(gistData).ConfigureAwait(false);
 
             logger.Information("Gist created at {Url}", gist.HtmlUrl);
 
@@ -177,7 +183,7 @@ async Task CreateCheck(Logger logger, GitHubClient client, long repoId, Inputs i
     {
         logger.Information("Adding check");
 
-        var body = collection.Format(null, TestResultFormatMode.Comment, maxLen: 65535 - 128, out var didTrunc);
+        var body = collection.Format(null, TestResultFormatMode.Comment, maxLen: 65535 - 128, skipLongOutput: true, out var didTrunc, out _);
         body = await RenderToGistIfNeeded(body, didTrunc, inputs, collection).ConfigureAwait(false);
         if (didTrunc) logger.Information("Check body was truncated");
 
@@ -328,7 +334,7 @@ async Task Comment(Logger logger, GitHubClient client, Event eventPayload, long 
     logger.Information("Creating comment for test results");
 
     // render out the comment body
-    var body = collection.Format(inputs.CommentTitle, TestResultFormatMode.Comment, maxLen: 65535 - 128, out var didTrunc);
+    var body = collection.Format(inputs.CommentTitle, TestResultFormatMode.Comment, maxLen: 65535 - 128, skipLongOutput: true, out var didTrunc, out _);
     body = await RenderToGistIfNeeded(body, didTrunc, inputs, collection).ConfigureAwait(false);
     if (didTrunc) logger.Information("Comment body was truncated");
 
