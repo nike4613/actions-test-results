@@ -193,12 +193,13 @@ namespace ActionsTestResultAction
                             {
                                 if (skipLong)
                                 {
+                                    _ = mb.AppendLine($"*{displayName} has been omitted because it is too long.*").AppendLine();
                                     return true;
                                 }
                                 else
                                 {
                                     extraOutput[outputName] = text;
-                                    _ = mb.AppendLine($"[{displayName}]({outputName})").AppendLine();
+                                    _ = mb.AppendLine($"[{displayName} (`{outputName}`)](#file-{outputName.Replace('.', '-')})").AppendLine();
                                     return true;
                                 }
                             }
