@@ -186,18 +186,20 @@ namespace ActionsTestResultAction
                                 """).AppendLine();
                         }
 
-                        static void AppendOutput(MarkdownBuilder mb, bool skipLong, Dictionary<string, string> extraOutput, string outputName, string displayName, string text)
+                        // returns didTrunc
+                        static bool AppendOutput(MarkdownBuilder mb, bool skipLong, Dictionary<string, string> extraOutput, string outputName, string displayName, string text)
                         {
                             if (text.Length > 1024)
                             {
                                 if (skipLong)
                                 {
-                                    return;
+                                    return true;
                                 }
                                 else
                                 {
                                     extraOutput[outputName] = text;
                                     _ = mb.AppendLine($"[{displayName}]({outputName})").AppendLine();
+                                    return true;
                                 }
                             }
                             else
@@ -217,17 +219,18 @@ namespace ActionsTestResultAction
                                     .DecreaseIndent()
                                     .AppendLine("</details>")
                                     .AppendLine();
+                                return false;
                             }
                         }
 
                         if (run.StdOut is not null)
                         {
-                            AppendOutput(mb, skipLongOutput, extraOutput, $"stdout{testId}.txt", "Test Standard Output", run.StdOut);
+                            didTruncate |= AppendOutput(mb, skipLongOutput, extraOutput, $"stdout{testId}.txt", "Test Standard Output", run.StdOut);
                         }
 
                         if (run.StdErr is not null)
                         {
-                            AppendOutput(mb, skipLongOutput, extraOutput, $"stderr{testId}.txt", "Test Standard Error", run.StdErr);
+                            didTruncate |= AppendOutput(mb, skipLongOutput, extraOutput, $"stderr{testId}.txt", "Test Standard Error", run.StdErr);
                         }
 
                         _ = mb.DecreaseIndent().AppendLine("</details>");
