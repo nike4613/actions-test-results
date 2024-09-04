@@ -153,7 +153,7 @@ namespace ActionsTestResultAction
 
                             if (i < extraSuites.Length)
                             {
-                                _ = mb.AppendLine($"*and {extraSuites.Length - i} more");
+                                _ = mb.AppendLine($"*and {extraSuites.Length - i} more*");
                             }
 
                             _ = mb.AppendLine().DecreaseIndent().AppendLine("</details>");

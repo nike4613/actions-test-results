@@ -40,6 +40,10 @@ namespace ActionsTestResultAction
             }
             CommentTitle = title!;
             GistToken = Env.GetInput(GistTokenVar);
+            if (string.IsNullOrEmpty(GistToken))
+            {
+                GistToken = null;
+            }
             CommentMode = Env.GetInput(CommentModeVar)?.ToUpperInvariant() switch
             {
                 "ALWAYS" => CommentMode.Always,

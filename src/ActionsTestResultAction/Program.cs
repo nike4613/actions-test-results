@@ -299,15 +299,15 @@ async Task MinimizePRComments(Logger logger, GitHubClient client, GQLConnection 
             var result = await gql
                 .Run(gqlUpdateMinimized, new Dictionary<string, object>
                 {
+                    {
+                        "minpay",
+                        new Octokit.GraphQL.Model.MinimizeCommentInput()
                         {
-                            "minpay",
-                            new Octokit.GraphQL.Model.MinimizeCommentInput()
-                            {
-                                Classifier = Octokit.GraphQL.Model.ReportedContentClassifiers.Outdated,
-                                ClientMutationId = "nike4613/actions-test-results",
-                                SubjectId = id,
-                            }
+                            Classifier = Octokit.GraphQL.Model.ReportedContentClassifiers.Outdated,
+                            ClientMutationId = "nike4613/actions-test-results",
+                            SubjectId = id,
                         }
+                    }
                 }).ConfigureAwait(false);
             if (!result)
             {
