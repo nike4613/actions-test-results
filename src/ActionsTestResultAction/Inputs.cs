@@ -13,6 +13,7 @@ namespace ActionsTestResultAction
         public const string CommentModeVar = "COMMENT_MODE";
         public const string FailOnVar = "FAIL_ON";
         public const string FilesVar = "FILES";
+        public const string UseEmojisVar = "USE_EMOJIS";
         public const string CommentOnCommitVar = "COMMENT_ON_COMMIT";
         public const string GistTokenVar = "GIST_TOKEN";
 
@@ -24,8 +25,8 @@ namespace ActionsTestResultAction
         public string? GistToken { get; }
         public CommentMode CommentMode { get; }
         public ImmutableArray<string> Files { get; }
+        public bool UseEmojis { get; }
         public bool CommentOnCommit { get; }
-
         public string CommitSha { get; }
 
         private static readonly char[] separator = ['\r', '\n'];
@@ -75,6 +76,8 @@ namespace ActionsTestResultAction
 
             var globber = Globber.Create(include, exclude);
             Files = globber.GlobFiles().ToImmutableArray();
+
+            UseEmojis = Env.GetInput(UseEmojisVar) is "true";
 
             CommentOnCommit = Env.GetInput(CommentOnCommitVar) is "true";
 

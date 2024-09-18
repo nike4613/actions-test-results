@@ -35,7 +35,7 @@ namespace ActionsTestResultAction
             AggregateRun = aggregateRun;
         }
 
-        public string Format(string? title, TestResultFormatMode mode, int maxLen, bool skipLongOutput, out bool didTruncate, out Dictionary<string, string> extraOutput, int listMaxSuites = 7)
+        public string Format(string? title, TestResultFormatMode mode, int maxLen, bool skipLongOutput, bool useEmojis, out bool didTruncate, out Dictionary<string, string> extraOutput, int listMaxSuites = 7)
         {
             var sb = new StringBuilder();
             var mb = new MarkdownBuilder(sb);
@@ -55,12 +55,15 @@ namespace ActionsTestResultAction
 
             var testId = 0;
 
+            var s = useEmojis ? " 💤" : string.Empty;
+            var p = useEmojis ? " ✅" : string.Empty;
+            var f = useEmojis ? " ❌" : string.Empty;
             _ = mb.AppendLine($"""
 
             | | Total | Skipped | Passed | Failed |{errorTableHdrExt2}
             | ---: | ---: | ---: | ---: | ---: |{errorTableHdrExt1}
-            | Unique | {AggregateRun.Total} | {AggregateRun.Skipped} | {AggregateRun.Passed} | {AggregateRun.Failed} |{errorTableUniqExt}
-            | Total | {Total} | {Skipped} | {Passed} | {Failed} |{errorTableTotalExt}
+            | Unique | {AggregateRun.Total} | {AggregateRun.Skipped}{s} | {AggregateRun.Passed}{p} | {AggregateRun.Failed}{f} |{errorTableUniqExt}
+            | Total | {Total} | {Skipped}{s} | {Passed}{p} | {Failed}{f} |{errorTableTotalExt}
 
             """);
 

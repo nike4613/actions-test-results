@@ -41,6 +41,10 @@ inputs:
   files:
     description: 'File patterns of test result files. Relative paths are known to work best, while the non-Docker action also works with absolute paths. Supports "*", "**", "?", and "[]" character ranges. Use multiline string for multiple patterns. Patterns starting with "!" exclude the matching files. There have to be at least one pattern starting without a "!".'
     required: true
+  use_emojis:
+    description: 'Set to "true", the markdown will be enhanced with additional emojis.'
+    default: 'false'
+    required: false
   comment_on_commit:
     description: 'Set to "true", the results are published as a comment on the commit, including more detail than the check summary.'
     default: 'true'
