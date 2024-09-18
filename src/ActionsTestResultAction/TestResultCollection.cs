@@ -63,7 +63,7 @@ namespace ActionsTestResultAction
             | | Total | Skipped | Passed  | Failed |{errorTableHdrExt2}
             | ---: | ---: | ---: | ---: | ---: |{errorTableHdrExt1}
             | Unique | {AggregateRun.Total} | {AggregateRun.Skipped}{s} | {AggregateRun.Passed}{p} | {AggregateRun.Failed}{f} |{errorTableUniqExt}
-            | Total | {Total} | {Skipped} | {Passed} | {Failed} |{errorTableTotalExt}
+            | Total | {Total} | {Skipped}{s} | {Passed}{p} | {Failed}{f} |{errorTableTotalExt}
 
             """);
 
