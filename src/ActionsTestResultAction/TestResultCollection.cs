@@ -60,7 +60,7 @@ namespace ActionsTestResultAction
             var f = useEmojis ? " ❌" : string.Empty;
             _ = mb.AppendLine($"""
 
-            | | Total | Skipped | Passed  | Failed |{errorTableHdrExt2}
+            | | Total | Skipped | Passed | Failed |{errorTableHdrExt2}
             | ---: | ---: | ---: | ---: | ---: |{errorTableHdrExt1}
             | Unique | {AggregateRun.Total} | {AggregateRun.Skipped}{s} | {AggregateRun.Passed}{p} | {AggregateRun.Failed}{f} |{errorTableUniqExt}
             | Total | {Total} | {Skipped}{s} | {Passed}{p} | {Failed}{f} |{errorTableTotalExt}
