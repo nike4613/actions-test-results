@@ -16,9 +16,9 @@
       },
       "GitHub.Actions.Glob": {
         "type": "Direct",
-        "requested": "[8.1.0, )",
-        "resolved": "8.1.0",
-        "contentHash": "UM3PBYA+ZBc8ZZieVE9RrdjXKaC/aQyEKp/ndavtWwQ8x1BJc3BHA23qglZELVHPcBRVq+k9pXJCauOBBx2gtQ==",
+        "requested": "[8.1.1, )",
+        "resolved": "8.1.1",
+        "contentHash": "yAdroMUiY2YcxUvchuT2Y5Xf+Ef+q9PqXDc+pWFut0+jJPC6TC00UJdezfv4l2a/jZIj2GnG/sxmM9R1ZqHfnQ==",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.1",
           "Pathological.Globbing": "8.0.4"
